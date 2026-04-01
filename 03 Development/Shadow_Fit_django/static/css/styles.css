@@ -1,117 +1,179 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:'Poppins',sans-serif;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
 }
 
-body{
-    background:#f5f5f5;
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
+/* BODY */
+body {
+    background: #f5f5f5;
+    min-height: 100vh;
 }
 
-/* Logo */
-
-.logo{
-    font-size:28px;
-    font-weight:600;
-    text-align:center;
-    margin-bottom:10px;
+/* PAGE LAYOUT */
+.page-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: auto;
+    padding: 40px 20px;
 }
 
-.logo .shadow{
-    color:#000;
+/* NAVBAR */
+.navbar {
+    padding: 12px 25px;
 }
 
-.logo .fit{
-    color:#00b050;
+.navbar-brand {
+    font-size: 22px;
 }
 
-/* Card */
-
-.auth-card{
-    background:white;
-    width:420px;
-    padding:40px;
-    border-radius:12px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.08);
+/* LOGO */
+.logo-shadow {
+    color: white;
+    font-family: 'Montserrat', sans-serif;
 }
 
-.auth-title{
-    text-align:center;
-    font-size:28px;
-    margin-bottom:25px;
+.logo-fit {
+    color: #20c05c;
+    font-family: 'Montserrat', sans-serif;
 }
 
-/* Inputs */
-
-.form-group{
-    margin-bottom:18px;
-}
-
-label{
-    font-size:14px;
-    display:block;
-    margin-bottom:5px;
-}
-
-input{
-    width:100%;
-    padding:12px;
-    border:1px solid #ddd;
-    border-radius:8px;
-    font-size:14px;
-}
-
-input:focus{
-    border-color:#00b050;
-    outline:none;
-}
-
-/* Buttons */
-
-.btn{
-    width:100%;
-    padding:12px;
-    border:none;
-    border-radius:8px;
-    background:#00b050;
+/* BUTTONS */
+.btn-green{
+    background:#20c05c;
     color:white;
-    font-size:15px;
-    cursor:pointer;
+    border:none;
+    padding:8px 18px;
+    border-radius:8px;
+    font-weight:500;
+    display:inline-block;
+    text-decoration:none;
+    line-height:1.5;
     transition:0.3s;
 }
 
-.btn:hover{
-    background:#009640;
-}
-
-/* Links */
-
-.auth-footer{
-    text-align:center;
-    margin-top:15px;
-    font-size:14px;
-}
-
-.auth-footer a{
-    color:#00b050;
+.btn-green:hover{
+    background:#169a49;
+    color:white;
     text-decoration:none;
-    font-weight:500;
 }
 
-/* Error Popup */
+.navbar .btn {
+    width: auto;
+}
 
-.alert{
-    background:#ffdddd;
-    color:#900;
-    padding:10px;
-    margin-bottom:15px;
-    border-radius:6px;
-    font-size:14px;
+/* AUTH PAGE CENTERING */
+.auth-page {
+    min-height: 85vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* AUTH CARD */
+.auth-card {
+    background: white;
+    width: 420px;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* LOGO IN AUTH */
+.logo {
+    font-size: 30px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 10px;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.logo .shadow {
+    color: #000;
+}
+
+.logo .fit {
+    color: #20c05c;
+}
+
+/* TITLE */
+.auth-title {
+    text-align: center;
+    font-size: 26px;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+/* INPUT FIELDS */
+.form-group {
+    margin-bottom: 18px;
+}
+
+label {
+    font-size: 14px;
+    margin-bottom: 5px;
+    display: block;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+input:focus {
+    border-color: #20c05c;
+    outline: none;
+}
+
+
+/* FORM BUTTON */
+.form-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #20c05c;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.form-btn:hover {
+    background: #169a49;
+}
+
+
+/* AUTH FOOTER */
+.auth-footer {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.auth-footer a {
+    color: #20c05c;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+
+/* ALERT / ERROR MESSAGE */
+.alert {
+    background: #ffdddd;
+    color: #900;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+    font-size: 14px;
 }

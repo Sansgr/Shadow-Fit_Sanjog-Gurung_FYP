@@ -1,0 +1,59 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+    <!-- Stat Cards (placeholders for now, will fill with real data later) -->
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="stat-icon bg-blue">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-info">
+                <h3>--</h3>
+                <p>Total Clients</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="stat-icon bg-green">
+                <i class="bi bi-person-badge-fill"></i>
+            </div>
+            <div class="stat-info">
+                <h3>--</h3>
+                <p>Total Trainers</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="stat-icon bg-orange">
+                <i class="bi bi-journal-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>--</h3>
+                <p>Total Bookings</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="stat-icon bg-purple">
+                <i class="bi bi-credit-card-fill"></i>
+            </div>
+            <div class="stat-info">
+                <h3>--</h3>
+                <p>Total Payments</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

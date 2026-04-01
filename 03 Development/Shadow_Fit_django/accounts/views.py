@@ -9,53 +9,38 @@ from django.contrib import messages
 def dashboard(request):
     return render(request, 'accounts/dashboard.html')
 
-
 # Register
 def register_view(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST, request.FILES)
-
         if form.is_valid():
             user = form.save(commit=False)
             user.role = 'Member'
+            user.first_name = form.cleaned_data.get('first_name')
+            user.last_name = form.cleaned_data.get('last_name')
             user.save()
-
             messages.success(request, "Registration successful!")
             login(request, user)
-
             return redirect('dashboard')
-
         else:
             messages.error(request, "Registration failed. Please fix the errors below.")
-
     else:
         form = RegisterForm()
-
     return render(request, 'accounts/register.html', {'form': form})
-
 
 # Login
 def login_view(request):
-
     if request.method == 'POST':
-
         form = LoginForm(request, data=request.POST)
-
         if form.is_valid():
-
             login(request, form.get_user())
             messages.success(request, "Login successful!")
-
             return redirect('dashboard')
-
         else:
             messages.error(request, "Invalid username or password.")
-
     else:
         form = LoginForm()
-
     return render(request, 'accounts/login.html', {'form': form})
-
 
 # Logout
 def logout_view(request):

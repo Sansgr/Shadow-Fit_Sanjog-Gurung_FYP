@@ -5,7 +5,8 @@ from django.db import models
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
         ('Member', 'Member'),
-        # Add other roles later if needed
+        ('Trainer', 'Trainer'),
+        ('Admin', 'Admin'), 
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='Member')
     phone = models.CharField(max_length=20, blank=True)
