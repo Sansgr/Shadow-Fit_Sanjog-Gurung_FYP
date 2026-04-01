@@ -33,9 +33,15 @@ def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
+            user = form.get_user()
             login(request, form.get_user())
             messages.success(request, "Login successful!")
-            return redirect('dashboard')
+            if user.role == 'Admin':
+                return redirect('admin_dashboard')
+            elif user.role == 'Trainer':
+                return redirect('dashboard') 
+            else:
+                return redirect('dashboard')
         else:
             messages.error(request, "Invalid username or password.")
     else:
