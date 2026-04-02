@@ -1,5 +1,6 @@
 from django import forms
 from accounts.models import CustomUser
+from gym.models import MembershipPlan
 
 class ClientForm(forms.ModelForm):
     class Meta:
@@ -22,3 +23,14 @@ class ClientForm(forms.ModelForm):
         if qs.exists():
             raise forms.ValidationError("Email is already registered.")
         return email
+    
+
+class MembershipPlanForm(forms.ModelForm):
+    class Meta:
+        model = MembershipPlan
+        fields = [
+            'plan_name',
+            'duration',
+            'price',
+            'description',
+        ]
