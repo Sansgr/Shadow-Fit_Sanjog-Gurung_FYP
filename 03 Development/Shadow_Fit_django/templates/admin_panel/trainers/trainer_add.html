@@ -1,0 +1,84 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}Add Trainer{% endblock %}
+{% block page_title %}Add Trainer{% endblock %}
+{% block breadcrumb %}Trainers / Add{% endblock %}
+
+{% block content %}
+<div class="admin-form-card">
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <h6 class="mb-3" style="color: var(--navy); font-weight:600; border-bottom:2px solid var(--navy); padding-bottom:8px;">
+            <i class="bi bi-person me-2"></i>Personal Information
+        </h6>
+
+        <div class="row">
+            <div class="col-md-6">
+                <label>First Name</label>
+                <input type="text" name="first_name" value="{{ user_form.first_name.value|default:'' }}" required>
+            </div>
+            <div class="col-md-6">
+                <label>Last Name</label>
+                <input type="text" name="last_name" value="{{ user_form.last_name.value|default:'' }}" required>
+            </div>
+        </div>
+
+        <label>Username</label>
+        <input type="text" name="username" id="username" value="{{ user_form.username.value|default:'' }}" required>
+
+        <label>Email</label>
+        <input type="email" name="email" value="{{ user_form.email.value|default:'' }}" required>
+
+        <label>Phone</label>
+        <input type="text" name="phone" value="{{ user_form.phone.value|default:'' }}">
+
+        <label>Profile Photo</label>
+        <input type="file" name="photo" accept="image/*">
+
+        <div class="mt-1 mb-3" style="font-size:13px; color:#888;">
+            <i class="bi bi-info-circle"></i>
+            Default password will be set to: <strong id="default-password">@123</strong>
+        </div>
+
+        <h6 class="mb-3 mt-4" style="color: var(--navy); font-weight:600; border-bottom:2px solid var(--navy); padding-bottom:8px;">
+            <i class="bi bi-person-badge me-2"></i>Trainer Profile
+        </h6>
+
+        <label>Specialty</label>
+        <input type="text" name="specialty" value="{{ profile_form.specialty.value|default:'' }}" placeholder="e.g. Strength, Yoga, Cardio" required>
+
+        <div class="row">
+            <div class="col-md-6">
+                <label>Experience (Years)</label>
+                <input type="number" name="experience" value="{{ profile_form.experience.value|default:'' }}" min="0" required>
+            </div>
+            <div class="col-md-6">
+                <label>Session Price (Rs.)</label>
+                <input type="number" name="session_price" value="{{ profile_form.session_price.value|default:'' }}" min="0" step="0.01" required>
+            </div>
+        </div>
+
+        <label>Bio</label>
+        <textarea name="bio" rows="3" placeholder="Brief background about the trainer...">{{ profile_form.bio.value|default:'' }}</textarea>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn-admin-success">
+                <i class="bi bi-check-lg"></i> Add Trainer
+            </button>
+            <a href="{% url 'trainer_list' %}" class="btn-admin-primary">
+                <i class="bi bi-x-lg"></i> Cancel
+            </a>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    const usernameInput = document.getElementById('username');
+    const defaultPassword = document.getElementById('default-password');
+
+    usernameInput.addEventListener('input', function () {
+        defaultPassword.textContent = (this.value || '') + '@123';
+    });
+</script>
+{% endblock %}
