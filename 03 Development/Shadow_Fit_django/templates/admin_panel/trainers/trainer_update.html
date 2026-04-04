@@ -7,6 +7,8 @@
 <div class="admin-form-card">
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
+        {% include "admin_panel/includes/form_errors.html" with form=user_form %}
+        {% include "admin_panel/includes/form_errors.html" with form=profile_form %}
 
         <h6 class="mb-3" style="color: var(--navy); font-weight:600; border-bottom:2px solid var(--navy); padding-bottom:8px;">
             <i class="bi bi-person me-2"></i>Personal Information

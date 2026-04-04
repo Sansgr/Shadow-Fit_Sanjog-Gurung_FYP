@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from admin_panel.decorators import admin_required
 from accounts.models import CustomUser
-from gym.models import MembershipPlan, Trainer
-from admin_panel.forms import ClientForm, MembershipPlanForm, TrainerUserForm, TrainerProfileForm
+from gym.models import MembershipPlan, Schedule, Trainer
+from admin_panel.forms import ClientForm, MembershipPlanForm, ScheduleForm, TrainerUserForm, TrainerProfileForm
 
 
 # 1) ADMIN DASHBOARD 
@@ -189,3 +189,55 @@ def trainer_delete(request, pk):
         messages.success(request, "Trainer deleted successfully!")
         return redirect('trainer_list')
     return render(request, 'admin_panel/trainers/trainer_delete.html', {'trainer': trainer})
+
+
+# 5) SCHEDULE MANAGEMENT VIEWS
+# a) SCHEDULE LIST
+@admin_required
+def schedule_list(request):
+    schedules = Schedule.objects.select_related('trainer__user').all().order_by('trainer__user__first_name', 'day_of_week')
+    return render(request, 'admin_panel/schedules/schedule_list.html', {'schedules': schedules})
+
+
+# b) SCHEDULE ADD
+@admin_required
+def schedule_add(request):
+    if request.method == 'POST':
+        form = ScheduleForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Schedule added successfully!")
+            return redirect('schedule_list')
+        else:
+            messages.error(request, "Please fix the errors below.")
+    else:
+        form = ScheduleForm()
+    return render(request, 'admin_panel/schedules/schedule_add.html', {'form': form})
+
+
+# c) SCHEDULE UPDATE
+@admin_required
+def schedule_update(request, pk):
+    schedule = get_object_or_404(Schedule, pk=pk)
+    if request.method == 'POST':
+        form = ScheduleForm(request.POST, instance=schedule)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Schedule updated successfully!")
+            return redirect('schedule_list')
+        else:
+            messages.error(request, "Please fix the errors below.")
+    else:
+        form = ScheduleForm(instance=schedule)
+    return render(request, 'admin_panel/schedules/schedule_update.html', {'form': form, 'schedule': schedule})
+
+
+# d) SCHEDULE DELETE
+@admin_required
+def schedule_delete(request, pk):
+    schedule = get_object_or_404(Schedule, pk=pk)
+    if request.method == 'POST':
+        schedule.delete()
+        messages.success(request, "Schedule deleted successfully!")
+        return redirect('schedule_list')
+    return render(request, 'admin_panel/schedules/schedule_delete.html', {'schedule': schedule})

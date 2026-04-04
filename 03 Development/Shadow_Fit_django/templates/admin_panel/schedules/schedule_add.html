@@ -1,0 +1,56 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}Add Schedule{% endblock %}
+{% block page_title %}Add Schedule{% endblock %}
+{% block breadcrumb %}Schedules / Add{% endblock %}
+
+{% block content %}
+<div class="admin-form-card">
+    <form method="POST">
+        {% csrf_token %}
+        {% include "admin_panel/includes/form_errors.html" with form=form %}
+
+        <label>Trainer</label>
+        <select name="trainer" required>
+            <option value="">— Select Trainer —</option>
+            {% for trainer in form.trainer.field.queryset %}
+                <option value="{{ trainer.pk }}"
+                    {% if form.trainer.value|stringformat:"s" == trainer.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ trainer.user.get_full_name }} ({{ trainer.specialty }})
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Day of Week</label>
+        <select name="day_of_week" required>
+            <option value="">— Select Day —</option>
+            {% for value, label in form.day_of_week.field.choices %}
+                <option value="{{ value }}"
+                    {% if form.day_of_week.value == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <div class="row">
+            <div class="col-md-6">
+                <label>Start Time</label>
+                <input type="time" name="start_time" value="{{ form.start_time.value|default:'' }}" required>
+            </div>
+            <div class="col-md-6">
+                <label>End Time</label>
+                <input type="time" name="end_time" value="{{ form.end_time.value|default:'' }}" required>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn-admin-success">
+                <i class="bi bi-check-lg"></i> Add Schedule
+            </button>
+            <a href="{% url 'schedule_list' %}" class="btn-admin-primary">
+                <i class="bi bi-x-lg"></i> Cancel
+            </a>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

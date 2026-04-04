@@ -7,7 +7,7 @@
 <div class="admin-form-card">
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
-
+        {% include "admin_panel/includes/form_errors.html" with form=form %}
         <div class="row">
             <div class="col-md-6">
                 <label>First Name</label>

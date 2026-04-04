@@ -1,6 +1,6 @@
 from django import forms
 from accounts.models import CustomUser
-from gym.models import MembershipPlan, Trainer
+from gym.models import MembershipPlan, Schedule, Trainer
 
 # Form for Client Management in Admin Panel
 class ClientForm(forms.ModelForm):
@@ -70,3 +70,41 @@ class TrainerProfileForm(forms.ModelForm):
             'session_price',
             'bio',
         ]
+
+# Form for Schedule Management in Admin Panel
+class ScheduleForm(forms.ModelForm):                
+    class Meta:
+        model = Schedule
+        fields = [
+            'trainer',
+            'day_of_week',
+            'start_time',
+            'end_time',
+        ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        trainer = cleaned_data.get('trainer')
+        day_of_week = cleaned_data.get('day_of_week')
+
+        # end time must be after start time
+        if start_time and end_time:
+            if end_time <= start_time:
+                raise forms.ValidationError("End time must be after start time.")
+
+        # Check for duplicate schedule for same trainer on same day and overlapping time
+        if trainer and day_of_week and start_time and end_time:
+            overlapping = Schedule.objects.filter(
+                trainer=trainer,
+                day_of_week=day_of_week,
+                start_time__lt=end_time,
+                end_time__gt=start_time,
+            )
+            if self.instance.pk:
+                overlapping = overlapping.exclude(pk=self.instance.pk)
+            if overlapping.exists():
+                raise forms.ValidationError("This trainer already has a schedule that overlaps with this time slot.")
+
+        return cleaned_data

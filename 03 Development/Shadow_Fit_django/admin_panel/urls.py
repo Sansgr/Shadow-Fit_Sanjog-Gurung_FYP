@@ -22,4 +22,10 @@ urlpatterns = [
     path('trainers/add/', views.trainer_add, name='trainer_add'),
     path('trainers/<int:pk>/update/', views.trainer_update, name='trainer_update'),
     path('trainers/<int:pk>/delete/', views.trainer_delete, name='trainer_delete'),
+
+    # Schedule URLs
+    path('schedules/', views.schedule_list, name='schedule_list'),
+    path('schedules/add/', views.schedule_add, name='schedule_add'),
+    path('schedules/<int:pk>/update/', views.schedule_update, name='schedule_update'),
+    path('schedules/<int:pk>/delete/', views.schedule_delete, name='schedule_delete'),
 ]

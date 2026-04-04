@@ -27,6 +27,9 @@
 body {
     background: var(--bg);
     color: var(--text-dark);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 /* ─── TOP NAVBAR ─────────────────────────────────── */
@@ -115,7 +118,7 @@ body {
 .admin-wrapper {
     display: flex;
     margin-top: var(--navbar-h);
-    min-height: calc(100vh - var(--navbar-h) - 48px);
+    flex: 1;
 }
 
 /* ─── SIDEBAR ────────────────────────────────────── */
@@ -185,6 +188,7 @@ body {
 .admin-main {
     margin-left: var(--sidebar-w);
     padding: 30px;
+    padding-bottom: 60px;
     width: 100%;
     transition: margin-left 0.3s;
 }
@@ -285,12 +289,9 @@ body {
     text-align: center;
     padding: 12px;
     font-size: 13px;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
     height: 48px;
-    z-index: 1000;
+    margin-left: var(--sidebar-w);
+    flex-shrink: 0;
 }
 
 .admin-footer strong {

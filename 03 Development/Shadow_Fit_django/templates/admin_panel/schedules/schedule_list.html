@@ -1,0 +1,62 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}Schedules{% endblock %}
+{% block page_title %}Manage Trainer Schedules{% endblock %}
+{% block breadcrumb %}Schedules{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <span class="text-muted fs-6">Total: <strong>{{ schedules.count }}</strong> schedules</span>
+    <a href="{% url 'schedule_add' %}" class="btn-admin-success">
+        <i class="bi bi-plus-lg"></i> Add Schedule
+    </a>
+</div>
+
+<div class="admin-table">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Trainer</th>
+                <th>Day</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for schedule in schedules %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                    {% if schedule.trainer.user.photo %}
+                        <img src="{{ schedule.trainer.user.photo.url }}" width="32" height="32"
+                            style="border-radius:50%; object-fit:cover; margin-right:8px;">
+                    {% else %}
+                        <i class="bi bi-person-circle me-2 fs-5 text-muted"></i>
+                    {% endif %}
+                    {{ schedule.trainer.user.get_full_name }}
+                </td>
+                <td>{{ schedule.day_of_week }}</td>
+                <td>{{ schedule.start_time|time:"h:i A" }}</td>
+                <td>{{ schedule.end_time|time:"h:i A" }}</td>
+                <td style="white-space: nowrap;">
+                    <a href="{% url 'schedule_update' schedule.pk %}" class="btn-admin-primary" style="padding:5px 12px; font-size:13px;">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <a href="{% url 'schedule_delete' schedule.pk %}" class="btn-admin-danger" style="padding:5px 12px; font-size:13px; margin-left:5px;">
+                        <i class="bi bi-trash"></i> Delete
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center; padding:30px; color:#999;">
+                    <i class="bi bi-calendar3 fs-3 d-block mb-2"></i>
+                    No schedules found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

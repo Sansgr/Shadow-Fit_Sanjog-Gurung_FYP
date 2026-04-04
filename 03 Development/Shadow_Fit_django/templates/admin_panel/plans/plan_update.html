@@ -7,7 +7,7 @@
 <div class="admin-form-card">
     <form method="POST">
         {% csrf_token %}
-
+        {% include "admin_panel/includes/form_errors.html" with form=form %}
         <label>Plan Name</label>
         <input type="text" name="plan_name" value="{{ form.plan_name.value|default:'' }}" required>
 
