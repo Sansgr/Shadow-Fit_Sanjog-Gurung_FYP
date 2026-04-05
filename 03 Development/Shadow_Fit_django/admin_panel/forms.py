@@ -1,8 +1,10 @@
 from django import forms
+from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
 from accounts.models import CustomUser
-from gym.models import MembershipPlan, Schedule, Trainer
+from gym.models import Booking, MembershipPlan, Schedule, Trainer
 
-# Form for Client Management in Admin Panel
+# 1) Form for Client Management in Admin Panel
 class ClientForm(forms.ModelForm):
     class Meta:
         model = CustomUser
@@ -25,7 +27,7 @@ class ClientForm(forms.ModelForm):
             raise forms.ValidationError("Email is already registered.")
         return email
     
-# Form for Membership Plan Management in Admin Panel
+# 2) Form for Membership Plan Management in Admin Panel
 class MembershipPlanForm(forms.ModelForm):
     class Meta:
         model = MembershipPlan
@@ -36,7 +38,7 @@ class MembershipPlanForm(forms.ModelForm):
             'description',
         ]
 
-# Form for Trainer Management in Admin Panel
+# 3) Form for Trainer Management in Admin Panel
 class TrainerUserForm(forms.ModelForm):
     """Handles CustomUser fields for trainer"""
     class Meta:
@@ -59,7 +61,7 @@ class TrainerUserForm(forms.ModelForm):
             raise forms.ValidationError("Email is already registered.")
         return email
 
-# Form for Trainer Profile Management in Admin Panel
+# 4) Form for Trainer Profile Management in Admin Panel
 class TrainerProfileForm(forms.ModelForm):
     """Handles Trainer profile fields"""
     class Meta:
@@ -71,13 +73,13 @@ class TrainerProfileForm(forms.ModelForm):
             'bio',
         ]
 
-# Form for Schedule Management in Admin Panel
-class ScheduleForm(forms.ModelForm):                
+# 5) Form for Schedule Management in Admin Panel
+class ScheduleForm(forms.ModelForm):
     class Meta:
         model = Schedule
         fields = [
             'trainer',
-            'day_of_week',
+            'shift_name',
             'start_time',
             'end_time',
         ]
@@ -86,25 +88,64 @@ class ScheduleForm(forms.ModelForm):
         cleaned_data = super().clean()
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
-        trainer = cleaned_data.get('trainer')
-        day_of_week = cleaned_data.get('day_of_week')
 
-        # end time must be after start time
         if start_time and end_time:
             if end_time <= start_time:
                 raise forms.ValidationError("End time must be after start time.")
 
-        # Check for duplicate schedule for same trainer on same day and overlapping time
-        if trainer and day_of_week and start_time and end_time:
-            overlapping = Schedule.objects.filter(
-                trainer=trainer,
-                day_of_week=day_of_week,
-                start_time__lt=end_time,
-                end_time__gt=start_time,
+        return cleaned_data
+    
+# 6) Form for Booking Management in Admin Panel
+class BookingForm(forms.ModelForm):
+    class Meta:
+        model = Booking
+        fields = [
+            'user',
+            'schedule',
+            'duration',
+            'start_date',
+            'booking_status',
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['user'].queryset = CustomUser.objects.filter(role='Member').order_by('first_name')
+        self.fields['schedule'].queryset = Schedule.objects.select_related('trainer__user').all()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        user = cleaned_data.get('user')
+        schedule = cleaned_data.get('schedule')
+        duration = cleaned_data.get('duration')
+        start_date = cleaned_data.get('start_date')
+
+        # Duplicate booking check
+        if user and schedule:
+            duplicate = Booking.objects.filter(
+                user=user,
+                schedule=schedule,
+                booking_status__in=['Pending', 'Confirmed']
             )
             if self.instance.pk:
-                overlapping = overlapping.exclude(pk=self.instance.pk)
-            if overlapping.exists():
-                raise forms.ValidationError("This trainer already has a schedule that overlaps with this time slot.")
+                duplicate = duplicate.exclude(pk=self.instance.pk)
+            if duplicate.exists():
+                raise forms.ValidationError("This client already has an active booking for this schedule.")
+
+        # Calculate end_date based on duration
+        if start_date and duration:
+            if duration == '1 Week':
+                cleaned_data['end_date'] = start_date + timedelta(weeks=1)
+            elif duration == '1 Month':
+                cleaned_data['end_date'] = start_date + relativedelta(months=1)
+            elif duration == '3 Months':
+                cleaned_data['end_date'] = start_date + relativedelta(months=3)
 
         return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # Assign calculated end_date from clean()
+        instance.end_date = self.cleaned_data.get('end_date')
+        if commit:
+            instance.save()
+        return instance

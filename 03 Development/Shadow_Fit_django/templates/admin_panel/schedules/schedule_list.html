@@ -17,7 +17,7 @@
             <tr>
                 <th>#</th>
                 <th>Trainer</th>
-                <th>Day</th>
+                <th>Shift</th>
                 <th>Start Time</th>
                 <th>End Time</th>
                 <th>Actions</th>
@@ -36,7 +36,7 @@
                     {% endif %}
                     {{ schedule.trainer.user.get_full_name }}
                 </td>
-                <td>{{ schedule.day_of_week }}</td>
+                <td>{{ schedule.shift_name }}</td>
                 <td>{{ schedule.start_time|time:"h:i A" }}</td>
                 <td>{{ schedule.end_time|time:"h:i A" }}</td>
                 <td style="white-space: nowrap;">

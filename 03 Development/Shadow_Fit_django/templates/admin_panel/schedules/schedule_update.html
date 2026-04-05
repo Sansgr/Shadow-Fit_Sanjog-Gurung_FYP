@@ -20,12 +20,12 @@
             {% endfor %}
         </select>
 
-        <label>Day of Week</label>
-        <select name="day_of_week" required>
-            <option value="">— Select Day —</option>
-            {% for value, label in form.day_of_week.field.choices %}
+        <label>Shift</label>
+        <select name="shift_name" required>
+            <option value="">— Select Shift —</option>
+            {% for value, label in form.shift_name.field.choices %}
                 <option value="{{ value }}"
-                    {% if form.day_of_week.value == value %}selected{% endif %}>
+                    {% if form.shift_name.value == value %}selected{% endif %}>
                     {{ label }}
                 </option>
             {% endfor %}

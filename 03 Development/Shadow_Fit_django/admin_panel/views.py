@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from datetime import date
 from admin_panel.decorators import admin_required
 from accounts.models import CustomUser
-from gym.models import MembershipPlan, Schedule, Trainer
-from admin_panel.forms import ClientForm, MembershipPlanForm, ScheduleForm, TrainerUserForm, TrainerProfileForm
+from gym.models import Booking, MembershipPlan, Schedule, Trainer
+from admin_panel.forms import ClientForm, MembershipPlanForm, ScheduleForm, TrainerUserForm, TrainerProfileForm, BookingForm  
 
 
 # 1) ADMIN DASHBOARD 
@@ -195,7 +196,8 @@ def trainer_delete(request, pk):
 # a) SCHEDULE LIST
 @admin_required
 def schedule_list(request):
-    schedules = Schedule.objects.select_related('trainer__user').all().order_by('trainer__user__first_name', 'day_of_week')
+    # TO THIS:
+    schedules = Schedule.objects.select_related('trainer__user').all().order_by('trainer__user__first_name', 'shift_name')
     return render(request, 'admin_panel/schedules/schedule_list.html', {'schedules': schedules})
 
 
@@ -241,3 +243,64 @@ def schedule_delete(request, pk):
         messages.success(request, "Schedule deleted successfully!")
         return redirect('schedule_list')
     return render(request, 'admin_panel/schedules/schedule_delete.html', {'schedule': schedule})
+
+
+# 6) BOOKING MANAGEMENT VIEWS
+# a) BOOKING LIST
+@admin_required
+def booking_list(request):
+    bookings = Booking.objects.select_related(
+        'user', 'schedule__trainer__user'
+    ).all().order_by('-booking_date')
+    return render(request, 'admin_panel/bookings/booking_list.html', {'bookings': bookings})
+
+
+# b) BOOKING ADD
+@admin_required
+def booking_add(request):
+    if request.method == 'POST':
+        form = BookingForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Booking added successfully!")
+            return redirect('booking_list')
+        else:
+            messages.error(request, "Please fix the errors below.")
+    else:
+        form = BookingForm()
+    return render(request, 'admin_panel/bookings/booking_add.html', {
+        'form': form,
+        'today': date.today().isoformat()   # for min date in template
+    })
+
+
+# c) BOOKING UPDATE
+@admin_required
+def booking_update(request, pk):
+    booking = get_object_or_404(Booking, pk=pk)
+    if request.method == 'POST':
+        form = BookingForm(request.POST, instance=booking)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Booking updated successfully!")
+            return redirect('booking_list')
+        else:
+            messages.error(request, "Please fix the errors below.")
+    else:
+        form = BookingForm(instance=booking)
+    return render(request, 'admin_panel/bookings/booking_update.html', {
+        'form': form,
+        'booking': booking,
+        'today': date.today().isoformat()   # for min date in template
+    })
+
+
+# d) BOOKING DELETE 
+@admin_required
+def booking_delete(request, pk):
+    booking = get_object_or_404(Booking, pk=pk)
+    if request.method == 'POST':
+        booking.delete()
+        messages.success(request, "Booking deleted successfully!")
+        return redirect('booking_list')
+    return render(request, 'admin_panel/bookings/booking_delete.html', {'booking': booking})

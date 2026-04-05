@@ -28,4 +28,10 @@ urlpatterns = [
     path('schedules/add/', views.schedule_add, name='schedule_add'),
     path('schedules/<int:pk>/update/', views.schedule_update, name='schedule_update'),
     path('schedules/<int:pk>/delete/', views.schedule_delete, name='schedule_delete'),
+
+    # Booking URLs
+    path('bookings/', views.booking_list, name='booking_list'),
+    path('bookings/add/', views.booking_add, name='booking_add'),
+    path('bookings/<int:pk>/update/', views.booking_update, name='booking_update'),
+    path('bookings/<int:pk>/delete/', views.booking_delete, name='booking_delete'),
 ]

@@ -1,0 +1,71 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}Update Booking{% endblock %}
+{% block page_title %}Update Booking{% endblock %}
+{% block breadcrumb %}Bookings / Update{% endblock %}
+
+{% block content %}
+<div class="admin-form-card">
+    <form method="POST">
+        {% csrf_token %}
+        {% include "admin_panel/includes/form_errors.html" with form=form %}
+
+        <label>Client</label>
+        <select name="user" required>
+            <option value="">— Select Client —</option>
+            {% for member in form.user.field.queryset %}
+                <option value="{{ member.pk }}"
+                    {% if form.user.value|stringformat:"s" == member.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ member.get_full_name }} ({{ member.username }})
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Trainer Schedule</label>
+        <select name="schedule" required>
+            <option value="">— Select Trainer & Shift —</option>
+            {% for schedule in form.schedule.field.queryset %}
+                <option value="{{ schedule.pk }}"
+                    {% if form.schedule.value|stringformat:"s" == schedule.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ schedule.trainer.user.get_full_name }} ({{ schedule.trainer.specialty }}) — {{ schedule.shift_name }} shift ({{ schedule.start_time|time:"h:i A" }} - {{ schedule.end_time|time:"h:i A" }})
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Duration</label>
+        <select name="duration" required>
+            <option value="">— Select Duration —</option>
+            {% for value, label in form.duration.field.choices %}
+                <option value="{{ value }}"
+                    {% if form.duration.value == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Start Date</label>
+        <input type="date" name="start_date"
+            value="{{ form.start_date.value|date:'Y-m-d'|default:'' }}"
+            min="{{ today }}" required>
+
+        <label>Status</label>
+        <select name="booking_status" required>
+            {% for value, label in form.booking_status.field.choices %}
+                <option value="{{ value }}"
+                    {% if form.booking_status.value == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn-admin-success">
+                <i class="bi bi-check-lg"></i> Update Booking
+            </button>
+            <a href="{% url 'booking_list' %}" class="btn-admin-primary">
+                <i class="bi bi-x-lg"></i> Cancel
+            </a>
+        </div>
+
+    </form>
+</div>
+{% endblock %}
