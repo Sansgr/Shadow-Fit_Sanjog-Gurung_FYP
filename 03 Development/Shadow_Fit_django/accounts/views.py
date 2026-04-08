@@ -7,7 +7,7 @@ from django.contrib import messages
 
 # Dashboard accessible to everyone
 def dashboard(request):
-    return render(request, 'accounts/dashboard.html')
+    return redirect('client_dashboard')
 
 # Register
 def register_view(request):
@@ -21,7 +21,7 @@ def register_view(request):
             user.save()
             messages.success(request, "Registration successful!")
             login(request, user)
-            return redirect('dashboard')
+            return redirect('client_dashboard')
         else:
             messages.error(request, "Registration failed. Please fix the errors below.")
     else:
@@ -41,7 +41,7 @@ def login_view(request):
             elif user.role == 'Trainer':
                 return redirect('dashboard') 
             else:
-                return redirect('dashboard')
+                return redirect('client_dashboard')
         else:
             messages.error(request, "Invalid username or password.")
     else:
@@ -51,4 +51,4 @@ def login_view(request):
 # Logout
 def logout_view(request):
     logout(request)
-    return redirect('dashboard')
+    return redirect('client_dashboard')

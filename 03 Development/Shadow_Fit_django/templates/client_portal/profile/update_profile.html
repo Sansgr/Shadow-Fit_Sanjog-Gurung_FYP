@@ -1,0 +1,74 @@
+{% extends "client_portal/base_client.html" %}
+{% block title %}Update Profile | Shadow Fit{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="update-profile-container">
+
+        <div class="update-profile-card">
+            <h4 class="mb-4">
+                <i class="bi bi-pencil-square me-2"></i>Update Profile
+            </h4>
+
+            <!-- Form Errors -->
+            {% if form.errors %}
+                {% for field in form %}
+                    {% if field.errors %}
+                        <div class="client-alert client-alert-error">
+                            <strong>{{ field.label }}:</strong>
+                            {% for error in field.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Current Photo -->
+                {% if request.user.photo %}
+                <div class="current-photo mb-3">
+                    <img src="{{ request.user.photo.url }}" alt="Current Photo">
+                    <span>Current Photo</span>
+                </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>First Name</label>
+                        <input type="text" name="first_name"
+                            value="{{ form.first_name.value|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name"
+                            value="{{ form.last_name.value|default:'' }}" required>
+                    </div>
+                </div>
+
+                <label>Email</label>
+                <input type="email" name="email"
+                    value="{{ form.email.value|default:'' }}" required>
+
+                <label>Phone</label>
+                <input type="text" name="phone"
+                    value="{{ form.phone.value|default:'' }}">
+
+                <label>Profile Photo</label>
+                <input type="file" name="photo" accept="image/*">
+
+                <div class="d-flex gap-3 mt-4">
+                    <button type="submit" class="client-btn-green">
+                        <i class="bi bi-check-lg"></i> Save Changes
+                    </button>
+                    <a href="{% url 'view_profile' %}" class="client-btn-outline"
+                        style="color: var(--black); border-color: #ccc;">
+                        <i class="bi bi-x-lg"></i> Cancel
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

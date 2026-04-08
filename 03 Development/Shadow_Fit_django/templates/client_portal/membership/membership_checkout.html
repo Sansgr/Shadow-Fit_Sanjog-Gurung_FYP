@@ -1,0 +1,67 @@
+{% extends "client_portal/base_client.html" %}
+{% block title %}Checkout | Shadow Fit{% endblock %}
+
+{% block content %}
+<div class="checkout-page">
+    <div class="checkout-container">
+
+        <!-- Plan Summary -->
+        <div class="checkout-plan-card">
+            <h4><i class="bi bi-bag-check me-2"></i>Order Summary</h4>
+            <div class="checkout-plan-details">
+                <div class="checkout-plan-name">{{ plan.plan_name }}</div>
+                <div class="checkout-plan-duration">
+                    <i class="bi bi-clock"></i>
+                    {{ plan.duration }} month{{ plan.duration|pluralize }}
+                </div>
+                <div class="checkout-plan-desc text-muted">
+                    {{ plan.description|default:"Access to all gym facilities." }}
+                </div>
+                <div class="checkout-plan-price">
+                    Rs. {{ plan.price }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Options -->
+        <div class="checkout-payment-card">
+            <h4><i class="bi bi-credit-card me-2"></i>Choose Payment Method</h4>
+
+            <!-- Khalti -->
+            <form method="POST" action="{% url 'membership_khalti_initiate' plan.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="payment-method-btn khalti-btn">
+                    <img src="https://khalti.com/static/khalti-logo.png"
+                        alt="Khalti" style="height:28px;">
+                    Pay with Khalti
+                    <span class="payment-amount">Rs. {{ plan.price }}</span>
+                </button>
+            </form>
+
+            <div class="payment-divider">
+                <span>or</span>
+            </div>
+
+            <!-- Cash -->
+            <form method="POST" action="{% url 'membership_cash_payment' plan.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="payment-method-btn cash-btn">
+                    <i class="bi bi-cash-stack" style="font-size:24px;"></i>
+                    Pay with Cash
+                    <span class="payment-amount">Rs. {{ plan.price }}</span>
+                </button>
+            </form>
+
+            <p class="cash-note">
+                <i class="bi bi-info-circle"></i>
+                Cash payment must be made at the front desk within 24 hours.
+            </p>
+
+            <a href="{% url 'membership_list' %}" class="back-link">
+                <i class="bi bi-arrow-left"></i> Back to Plans
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

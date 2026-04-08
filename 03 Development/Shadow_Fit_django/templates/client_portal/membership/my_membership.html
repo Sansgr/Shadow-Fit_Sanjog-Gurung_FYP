@@ -1,0 +1,67 @@
+{% extends "client_portal/base_client.html" %}
+{% block title %}My Membership | Shadow Fit{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="my-membership-container">
+
+        <h3 class="mb-4">
+            <i class="bi bi-card-checklist me-2 text-green"></i>My Membership
+        </h3>
+
+        {% if subscription %}
+        <div class="membership-detail-card">
+            <div class="membership-status-header">
+                <div class="membership-badge active">
+                    <i class="bi bi-check-circle-fill"></i> Active Membership
+                </div>
+                <span class="membership-plan-name">{{ subscription.plan.plan_name }}</span>
+            </div>
+
+            <div class="membership-detail-grid">
+                <div class="info-item">
+                    <label>Plan</label>
+                    <p>{{ subscription.plan.plan_name }}</p>
+                </div>
+                <div class="info-item">
+                    <label>Duration</label>
+                    <p>{{ subscription.plan.duration }} month{{ subscription.plan.duration|pluralize }}</p>
+                </div>
+                <div class="info-item">
+                    <label>Price</label>
+                    <p>Rs. {{ subscription.plan.price }}</p>
+                </div>
+                <div class="info-item">
+                    <label>Start Date</label>
+                    <p>{{ subscription.start_date|date:"M d, Y" }}</p>
+                </div>
+                <div class="info-item">
+                    <label>Expiry Date</label>
+                    <p>{{ subscription.end_date|date:"M d, Y" }}</p>
+                </div>
+                <div class="info-item">
+                    <label>Status</label>
+                    <p><span class="membership-badge active">Active</span></p>
+                </div>
+            </div>
+
+            <div class="membership-desc mt-3">
+                <label>Plan Includes</label>
+                <p>{{ subscription.plan.description|default:"Access to all gym facilities." }}</p>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="no-membership-card">
+            <i class="bi bi-x-circle-fill"></i>
+            <h5>No Active Membership</h5>
+            <p>You don't have an active membership plan yet.</p>
+            <a href="{% url 'membership_list' %}" class="client-btn-green mt-3">
+                <i class="bi bi-bag-plus"></i> Get a Plan
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

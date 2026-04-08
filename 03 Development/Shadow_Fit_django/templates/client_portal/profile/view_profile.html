@@ -1,0 +1,103 @@
+{% extends "client_portal/base_client.html" %}
+{% load static %}
+{% block title %}Settings | Shadow Fit{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="profile-container">
+
+        <!-- LEFT — Profile Card -->
+        <div class="profile-card">
+            <div class="profile-avatar">
+                {% if request.user.photo %}
+                    <img src="{{ request.user.photo.url }}" alt="Profile Photo">
+                {% else %}
+                    <div class="avatar-placeholder">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <h3>{{ request.user.get_full_name }}</h3>
+            <span class="profile-role">{{ request.user.role }}</span>
+            <p class="profile-username">@{{ request.user.username }}</p>
+            <a href="{% url 'update_profile' %}" class="client-btn-green w-100 text-center mt-3">
+                <i class="bi bi-pencil"></i> Edit Profile
+            </a>
+        </div>
+
+        <!-- RIGHT — Details -->
+        <div class="profile-details">
+
+            <!-- Personal Info -->
+            <div class="profile-section-card">
+                <h5><i class="bi bi-person me-2"></i>Personal Information</h5>
+                <div class="profile-info-grid">
+                    <div class="info-item">
+                        <label>Full Name</label>
+                        <p>{{ request.user.get_full_name|default:"—" }}</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Username</label>
+                        <p>@{{ request.user.username }}</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Email</label>
+                        <p>{{ request.user.email|default:"—" }}</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Phone</label>
+                        <p>{{ request.user.phone|default:"—" }}</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Member Since</label>
+                        <p>{{ request.user.date_joined|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Update Password -->
+            <div class="profile-section-card">
+                <h5><i class="bi bi-shield-lock me-2"></i>Update Password</h5>
+
+                {% if password_form.errors %}
+                    {% for field in password_form %}
+                        {% if field.errors %}
+                            <div class="client-alert client-alert-error mb-3">
+                                <strong>{{ field.label }}:</strong>
+                                {% for error in field.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="password-form">
+                        <div>
+                            <label>Current Password</label>
+                            <input type="password" name="old_password"
+                                placeholder="Enter current password" required>
+                        </div>
+                        <div>
+                            <label>New Password</label>
+                            <input type="password" name="new_password1"
+                                placeholder="Enter new password" required>
+                        </div>
+                        <div>
+                            <label>Confirm New Password</label>
+                            <input type="password" name="new_password2"
+                                placeholder="Confirm new password" required>
+                        </div>
+                        <div class="mt-2">
+                            <button type="submit" class="client-btn-green">
+                                <i class="bi bi-shield-check"></i> Update Password
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

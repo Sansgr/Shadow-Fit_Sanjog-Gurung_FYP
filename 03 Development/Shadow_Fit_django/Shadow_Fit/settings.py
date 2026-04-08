@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'accounts',
     'admin_panel',
     'gym',
+    'client_portal',
 ]
 
 MIDDLEWARE = [
@@ -130,9 +131,14 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 
+# Custom User Model
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
+# Media files (for user-uploaded content)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Khalti Payment
+KHALTI_SECRET_KEY = "your_khalti_secret_key_here"
+KHALTI_PUBLIC_KEY = "your_khalti_public_key_here"

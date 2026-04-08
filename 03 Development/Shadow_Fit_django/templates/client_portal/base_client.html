@@ -1,0 +1,132 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Shadow Fit{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/client_styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="client-navbar">
+        <div class="client-navbar-inner">
+            <a href="{% url 'client_dashboard' %}" class="client-brand">
+                <span class="brand-shadow">Shadow</span><span class="brand-fit">Fit</span>
+            </a>
+
+            <!-- Nav Links -->
+            <div class="client-nav-links">
+                <a href="{% url 'client_dashboard' %}"
+                    class="{% if request.resolver_match.url_name == 'client_dashboard' %}active{% endif %}">
+                    <i class="bi bi-house"></i> Home
+                </a>
+                <a href="{% url 'membership_list' %}"
+                    class="{% if 'membership' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-card-list"></i> Membership
+                </a>
+                <a href="#"
+                    class="{% if 'trainer' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-person-badge"></i> Trainers
+                </a>
+                {% if request.user.is_authenticated %}
+                <a href="#"
+                    class="{% if 'booking' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-journal-check"></i> My Bookings
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Right side -->
+            <div class="client-nav-right">
+                {% if request.user.is_authenticated %}
+                    <!-- Profile Dropdown -->
+                    <div class="profile-dropdown">
+                        <button class="client-profile-btn" id="profileDropdownBtn">
+                            {% if request.user.photo %}
+                                <img src="{{ request.user.photo.url }}" alt="photo">
+                            {% else %}
+                                <i class="bi bi-person-circle"></i>
+                            {% endif %}
+                            {{ request.user.first_name }}
+                            <i class="bi bi-chevron-down ms-1" style="font-size:11px;"></i>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div class="profile-dropdown-menu" id="profileDropdownMenu">
+                            <a href="{% url 'view_profile' %}" class="dropdown-item-link">
+                                <i class="bi bi-gear"></i> Manage Profile    
+                            </a>
+                            <a href="{% url 'my_membership' %}" class="dropdown-item-link">
+                                <i class="bi bi-card-checklist"></i> My Membership
+                            </a>
+                            <a href="#" class="dropdown-item-link">
+                                <i class="bi bi-journal-check"></i> My Bookings
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'logout' %}" class="dropdown-item-link dropdown-logout">
+                                <i class="bi bi-box-arrow-right"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{% url 'login' %}" class="client-btn-outline">Login</a>
+                    <a href="{% url 'register' %}" class="client-btn-green">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- MESSAGES -->
+    {% if messages %}
+        <div class="client-messages">
+            {% for message in messages %}
+            <div class="client-alert client-alert-{{ message.tags }}">
+                <i class="bi bi-info-circle me-2"></i>{{ message }}
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- MAIN CONTENT -->
+    <main class="client-main">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="client-footer">
+        <div class="client-footer-inner">
+            <div class="footer-brand">
+                <span class="brand-shadow">Shadow</span><span class="brand-fit">Fit</span>
+                <p>Your fitness journey starts here.</p>
+            </div>
+            <div class="footer-links">
+                <a href="{% url 'client_dashboard' %}">Home</a>
+                <a href="#">Membership</a>
+                <a href="#">Trainers</a>
+            </div>
+            <div class="footer-copy">
+                &copy; 2025 <strong>Shadow Fit</strong>. All rights reserved.
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+
+        // Auto dismiss messages after 3 seconds
+        setTimeout(function() {
+            const messages = document.querySelector('.client-messages');
+            if (messages) {
+                messages.style.transition = 'opacity 0.5s';
+                messages.style.opacity = '0';
+                setTimeout(() => messages.remove(), 500);
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

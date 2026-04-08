@@ -1,0 +1,88 @@
+{% extends "client_portal/base_client.html" %}
+{% block title %}Membership Plans | Shadow Fit{% endblock %}
+
+{% block content %}
+<div class="membership-page">
+
+    <div class="section-header mt-5">
+        <h2>Membership <span class="text-green">Plans</span></h2>
+        <p>Choose the plan that fits your goals and budget</p>
+    </div>
+
+    {% if active_subscription %}
+    <div class="active-subs-banner">
+        <i class="bi bi-check-circle-fill"></i>
+        You already have an active <strong>{{ active_subscription.plan.plan_name }}</strong>
+        plan valid until <strong>{{ active_subscription.end_date|date:"M d, Y" }}</strong>.
+    </div>
+    {% endif %}
+
+    <div class="plans-grid mt-4">
+        {% for plan in plans %}
+        <div class="plan-card">
+            <div class="plan-header">
+                <h3>{{ plan.plan_name }}</h3>
+                <div class="plan-price">
+                    <span class="price">Rs. {{ plan.price }}</span>
+                    <span class="duration">/ {{ plan.duration }} month{{ plan.duration|pluralize }}</span>
+                </div>
+            </div>
+            <div class="plan-body">
+                <p>{{ plan.description|default:"Access to all gym facilities." }}</p>
+            </div>
+            <div class="plan-footer">
+                {% if active_subscription %}
+                    <button class="client-btn-outline w-100 text-center" disabled
+                        style="opacity:0.5; cursor:not-allowed; color:#333; border-color:#ccc;">
+                        Already Subscribed
+                    </button>
+                {% elif request.user.is_authenticated %}
+                    <a href="{% url 'membership_checkout' plan.pk %}" class="client-btn-green w-100 text-center">
+                        <i class="bi bi-bag-check"></i> Purchase Plan
+                    </a>
+                {% else %}
+                    <button onclick="showAuthPopup('purchase')" class="client-btn-green w-100 text-center">
+                        <i class="bi bi-bag-check"></i> Purchase Plan
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Auth Popup for guests -->
+<div id="authPopup" class="auth-popup-overlay" style="display:none;">
+    <div class="auth-popup-box">
+        <div class="auth-popup-icon">
+            <i class="bi bi-lock-fill"></i>
+        </div>
+        <h5 id="authPopupTitle">Login Required</h5>
+        <p id="authPopupMessage">You need to login to continue.</p>
+        <div class="d-flex gap-3 justify-content-center mt-4">
+            <a href="{% url 'login' %}" class="client-btn-green">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+            </a>
+            <a href="{% url 'register' %}" class="client-btn-outline"
+                style="color: var(--black); border-color: #ccc;">
+                <i class="bi bi-person-plus"></i> Register
+            </a>
+        </div>
+        <button onclick="closeAuthPopup()" class="auth-popup-close">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+    function showAuthPopup(type) {
+        document.getElementById('authPopup').style.display = 'flex';
+    }
+    function closeAuthPopup() {
+        document.getElementById('authPopup').style.display = 'none';
+    }
+    document.getElementById('authPopup').addEventListener('click', function(e) {
+        if (e.target === this) closeAuthPopup();
+    });
+</script>
+{% endblock %}

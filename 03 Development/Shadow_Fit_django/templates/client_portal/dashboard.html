@@ -1,0 +1,179 @@
+{% extends "client_portal/base_client.html" %}
+{% load static %}
+{% block title %}Home | Shadow Fit{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO SECTION ───────────────────────────── -->
+<section class="hero-section">
+    <div class="hero-content">
+        <h1>
+            Transform Your Body<br>
+            With <span class="text-green">Shadow Fit</span>
+        </h1>
+        <p>Join Nepal's premier gym. Expert trainers, flexible memberships, and a community that pushes you further.</p>
+        {% if request.user.is_authenticated %}
+            <a href="#plans" class="client-btn-green">View Plans</a>
+            <a href="#trainers" class="client-btn-outline ms-3">Browse Trainers</a>
+        {% else %}
+            <a href="{% url 'register' %}" class="client-btn-green">Get Started</a>
+            <a href="{% url 'login' %}" class="client-btn-outline ms-3">Login</a>
+        {% endif %}
+    </div>
+</section>
+
+<!-- ── STATS BAR ──────────────────────────────── -->
+<section class="stats-bar">
+    <div class="stat-item">
+        <h3>{{ trainers.count }}+</h3>
+        <p>Expert Trainers</p>
+    </div>
+    <div class="stat-item">
+        <h3>{{ plans.count }}+</h3>
+        <p>Membership Plans</p>
+    </div>
+    <div class="stat-item">
+        <h3>6</h3>
+        <p>Days a Week</p>
+    </div>
+    <div class="stat-item">
+        <h3>3</h3>
+        <p>Daily Shifts</p>
+    </div>
+</section>
+
+<!-- ── MEMBERSHIP PLANS ───────────────────────── -->
+<section class="client-section" id="plans">
+    <div class="section-header">
+        <h2>Membership <span class="text-green">Plans</span></h2>
+        <p>Choose the plan that fits your goals and budget</p>
+    </div>
+    <div class="plans-grid">
+        {% for plan in plans %}
+        <div class="plan-card">
+            <div class="plan-header">
+                <h3>{{ plan.plan_name }}</h3>
+                <div class="plan-price">
+                    <span class="price">Rs. {{ plan.price }}</span>
+                    <span class="duration">/ {{ plan.duration }} month{{ plan.duration|pluralize }}</span>
+                </div>
+            </div>
+            <div class="plan-body">
+                <p>{{ plan.description|default:"Access to all gym facilities." }}</p>
+            </div>
+            <div class="plan-footer">
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'membership_list' %}" class="client-btn-green w-100 text-center">
+                        <i class="bi bi-bag-check"></i> Purchase Plan
+                    </a>
+                {% else %}
+                    <button onclick="showAuthPopup('purchase')" class="client-btn-green w-100 text-center">
+                        <i class="bi bi-bag-check"></i> Purchase Plan
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">No plans available yet.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- ── TRAINERS ───────────────────────────────── -->
+<section class="client-section bg-light-section" id="trainers">
+    <div class="section-header">
+        <h2>Meet Our <span class="text-green">Trainers</span></h2>
+        <p>Expert trainers ready to guide your fitness journey</p>
+    </div>
+    <div class="trainers-grid">
+        {% for trainer in trainers %}
+        <div class="trainer-card">
+            <div class="trainer-photo">
+                {% if trainer.user.photo %}
+                    <img src="{{ trainer.user.photo.url }}" alt="{{ trainer.user.get_full_name }}">
+                {% else %}
+                    <div class="trainer-photo-placeholder">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="trainer-info">
+                <h4>{{ trainer.user.get_full_name }}</h4>
+                <span class="trainer-specialty">{{ trainer.specialty }}</span>
+                <p class="trainer-bio">{{ trainer.bio|truncatechars:80 }}</p>
+                <div class="trainer-meta">
+                    <span><i class="bi bi-clock"></i> {{ trainer.experience }} yrs exp</span>
+                    <span><i class="bi bi-currency-rupee"></i> Rs. {{ trainer.session_price }}/session</span>
+                </div>
+                <div class="trainer-shifts">
+                    {% for schedule in trainer.schedules.all %}
+                        <span class="shift-badge shift-{{ schedule.shift_name|lower }}">
+                            {{ schedule.shift_name }}
+                        </span>
+                    {% endfor %}
+                </div>
+                {% if request.user.is_authenticated %}
+                    <a href="#" class="client-btn-green w-100 text-center mt-3">
+                        <i class="bi bi-calendar-plus"></i> Book Trainer
+                    </a>
+                {% else %}
+                    <button onclick="showAuthPopup('book')" class="client-btn-green w-100 text-center mt-3">
+                        <i class="bi bi-calendar-plus"></i> Book Trainer
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">No trainers available yet.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- AUTH POPUP -->
+<div id="authPopup" class="auth-popup-overlay" style="display:none;">
+    <div class="auth-popup-box">
+        <div class="auth-popup-icon">
+            <i class="bi bi-lock-fill"></i>
+        </div>
+        <h5 id="authPopupTitle">Login Required</h5>
+        <p id="authPopupMessage">You need to login to continue.</p>
+        <div class="d-flex gap-3 justify-content-center mt-4">
+            <a href="{% url 'login' %}" class="client-btn-green">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+            </a>
+            <a href="{% url 'register' %}" class="client-btn-outline" style="color: var(--black); border-color: #ccc;">
+                <i class="bi bi-person-plus"></i> Register
+            </a>
+        </div>
+        <button onclick="closeAuthPopup()" class="auth-popup-close">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+    function showAuthPopup(type) {
+        const popup = document.getElementById('authPopup');
+        const title = document.getElementById('authPopupTitle');
+        const message = document.getElementById('authPopupMessage');
+
+        if (type === 'purchase') {
+            title.textContent = 'Login to Purchase';
+            message.textContent = 'You need to be logged in to purchase a membership plan.';
+        } else if (type === 'book') {
+            title.textContent = 'Login to Book';
+            message.textContent = 'You need to be logged in to book a trainer session.';
+        }
+        popup.style.display = 'flex';
+    }
+
+    function closeAuthPopup() {
+        document.getElementById('authPopup').style.display = 'none';
+    }
+
+    // Close on overlay click
+    document.getElementById('authPopup').addEventListener('click', function(e) {
+        if (e.target === this) closeAuthPopup();
+    });
+</script>
+{% endblock %}

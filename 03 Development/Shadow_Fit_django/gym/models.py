@@ -88,3 +88,58 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.user.get_full_name()} — {self.schedule.trainer.user.get_full_name()} ({self.duration})"
+    
+    
+# 5) Subscription model to store information about user subscriptions to membership plans
+class Subscription(models.Model):
+    STATUS_CHOICES = (
+        ('Active', 'Active'),
+        ('Expired', 'Expired'),
+        ('Cancelled', 'Cancelled'),
+    )
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'Member'}
+    )
+    plan = models.ForeignKey(
+        MembershipPlan,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    start_date = models.DateField()
+    end_date = models.DateField()
+    subs_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} — {self.plan.plan_name} ({self.subs_status})"
+    
+
+# 6) Payment model to store information about user payments for subscriptions and bookings
+class Payment(models.Model):
+    METHOD_CHOICES = (
+        ('Cash', 'Cash'),
+        ('Online', 'Online'),       
+    )
+    PLATFORM_CHOICES = (
+        ('Khalti', 'Khalti'), 
+    )
+    STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('Completed', 'Completed'),
+        ('Failed', 'Failed'),
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    payment_method = models.CharField(max_length=20, choices=METHOD_CHOICES)
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES, blank=True, null=True)
+    payment_date = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} — Rs.{self.amount} ({self.payment_status})"
