@@ -140,5 +140,8 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Khalti Payment
-KHALTI_SECRET_KEY = "your_khalti_secret_key_here"
-KHALTI_PUBLIC_KEY = "your_khalti_public_key_here"
+KHALTI_SECRET_KEY = "6803f629e3744ee099297406a57d7526"
+KHALTI_PUBLIC_KEY = "7588c70baf694173b30f98a5496e88a6"
+
+# Disable APPEND_SLASH to prevent automatic redirection of URLs without trailing slashes
+APPEND_SLASH = False

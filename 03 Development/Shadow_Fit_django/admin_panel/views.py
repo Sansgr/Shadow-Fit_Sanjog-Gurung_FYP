@@ -145,7 +145,7 @@ def trainer_add(request):
             trainer.user = user
             trainer.save()
             messages.success(request, "Trainer added successfully!")
-            return redirect('trainer_list')
+            return redirect('admin_trainer_list')
         else:
             messages.error(request, "Please fix the errors below.")
     else:
@@ -168,7 +168,7 @@ def trainer_update(request, pk):
             user_form.save()
             profile_form.save()
             messages.success(request, "Trainer updated successfully!")
-            return redirect('trainer_list')
+            return redirect('admin_trainer_list')
         else:
             messages.error(request, "Please fix the errors below.")
     else:
@@ -188,7 +188,7 @@ def trainer_delete(request, pk):
     if request.method == 'POST':
         trainer.user.delete()   # deletes CustomUser which cascades to Trainer
         messages.success(request, "Trainer deleted successfully!")
-        return redirect('trainer_list')
+        return redirect('admin_trainer_list')
     return render(request, 'admin_panel/trainers/trainer_delete.html', {'trainer': trainer})
 
 

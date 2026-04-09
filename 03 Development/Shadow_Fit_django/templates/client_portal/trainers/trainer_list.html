@@ -1,0 +1,48 @@
+{% extends "client_portal/base_client.html" %}
+{% block title %}Trainers | Shadow Fit{% endblock %}
+
+{% block content %}
+<div class="client-section" style="padding-top:50px;">
+    <div class="section-header">
+        <h2>Our <span class="text-green">Trainers</span></h2>
+        <p>Expert trainers ready to guide your fitness journey — available Sunday to Friday</p>
+    </div>
+
+    <div class="trainers-grid">
+        {% for trainer in trainers %}
+        <div class="trainer-card">
+            <div class="trainer-photo">
+                {% if trainer.user.photo %}
+                    <img src="{{ trainer.user.photo.url }}" alt="{{ trainer.user.get_full_name }}">
+                {% else %}
+                    <div class="trainer-photo-placeholder">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="trainer-info">
+                <h4>{{ trainer.user.get_full_name }}</h4>
+                <span class="trainer-specialty">{{ trainer.specialty }}</span>
+                <p class="trainer-bio">{{ trainer.bio|truncatechars:80 }}</p>
+                <div class="trainer-meta">
+                    <span><i class="bi bi-clock"></i> {{ trainer.experience }} yrs exp</span>
+                    <span><i class="bi bi-currency-rupee"></i> Rs. {{ trainer.session_price }}/session</span>
+                </div>
+                <div class="trainer-shifts">
+                    {% for schedule in trainer.schedules.all %}
+                        <span class="shift-badge shift-{{ schedule.shift_name|lower }}">
+                            {{ schedule.shift_name }}
+                        </span>
+                    {% endfor %}
+                </div>
+                <a href="{% url 'trainer_detail' trainer.pk %}" class="client-btn-green w-100 text-center mt-3">
+                    <i class="bi bi-eye"></i> View & Book
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">No trainers available.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

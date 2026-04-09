@@ -18,10 +18,10 @@ urlpatterns = [
     path('plans/<int:pk>/delete/', views.plan_delete, name='plan_delete'),
 
     # Trainer URLs
-    path('trainers/', views.trainer_list, name='trainer_list'),
-    path('trainers/add/', views.trainer_add, name='trainer_add'),
-    path('trainers/<int:pk>/update/', views.trainer_update, name='trainer_update'),
-    path('trainers/<int:pk>/delete/', views.trainer_delete, name='trainer_delete'),
+    path('trainers/', views.trainer_list, name='admin_trainer_list'),
+    path('trainers/add/', views.trainer_add, name='admin_trainer_add'),
+    path('trainers/<int:pk>/update/', views.trainer_update, name='admin_trainer_update'),
+    path('trainers/<int:pk>/delete/', views.trainer_delete, name='admin_trainer_delete'),
 
     # Schedule URLs
     path('schedules/', views.schedule_list, name='schedule_list'),

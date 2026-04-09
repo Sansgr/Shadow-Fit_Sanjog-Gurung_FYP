@@ -1,0 +1,115 @@
+{% extends "client_portal/base_client.html" %}
+{% block title %}Book Trainer | Shadow Fit{% endblock %}
+
+{% block content %}
+<div class="checkout-page">
+    <div class="checkout-container">
+
+        <!-- Booking Summary -->
+        <div class="checkout-plan-card">
+            <h4><i class="bi bi-calendar-check me-2"></i>Booking Summary</h4>
+            <div class="checkout-plan-details">
+                <div class="checkout-plan-name">
+                    {{ schedule.trainer.user.get_full_name }}
+                </div>
+                <span class="trainer-specialty mb-2 d-inline-block">
+                    {{ schedule.trainer.specialty }}
+                </span>
+                <div class="checkout-plan-duration">
+                    <i class="bi bi-sun"></i>
+                    {{ schedule.shift_name }} Shift
+                    ({{ schedule.start_time|time:"h:i A" }} — {{ schedule.end_time|time:"h:i A" }})
+                </div>
+                <div class="checkout-plan-duration mt-1">
+                    <i class="bi bi-calendar3"></i>
+                    Available: Sunday — Friday
+                </div>
+                <div class="checkout-plan-price mt-3">
+                    Rs. {{ schedule.trainer.session_price }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Options -->
+        <div class="checkout-payment-card">
+            <h4><i class="bi bi-credit-card me-2"></i>Booking Details & Payment</h4>
+
+            <!-- Duration & Start Date (shared) -->
+            <div class="booking-fields">
+                <label>Duration</label>
+                <select id="durationSelect" class="booking-select">
+                    {% for value, label in duration_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+
+                <label class="mt-3">Start Date</label>
+                <input type="date" id="startDateInput"
+                    min="{{ today }}" class="booking-input">
+            </div>
+
+            <!-- Khalti -->
+            <form method="POST" action="{% url 'booking_khalti_initiate' schedule.pk %}"
+                id="khaltiForm">
+                {% csrf_token %}
+                <input type="hidden" name="duration" id="khaltiDuration">
+                <input type="hidden" name="start_date" id="khaltiStartDate">
+                <button type="submit" onclick="return fillForm('khalti')"
+                    class="payment-method-btn khalti-btn mt-3">
+                    <img src="https://khalti.com/static/khalti-logo.png"
+                        alt="Khalti" style="height:28px;">
+                    Pay with Khalti
+                    <span class="payment-amount">Rs. {{ schedule.trainer.session_price }}</span>
+                </button>
+            </form>
+
+            <div class="payment-divider"><span>or</span></div>
+
+            <!-- Cash -->
+            <form method="POST" action="{% url 'booking_cash_payment' schedule.pk %}"
+                id="cashForm">
+                {% csrf_token %}
+                <input type="hidden" name="duration" id="cashDuration">
+                <input type="hidden" name="start_date" id="cashStartDate">
+                <button type="submit" onclick="return fillForm('cash')"
+                    class="payment-method-btn cash-btn">
+                    <i class="bi bi-cash-stack" style="font-size:24px;"></i>
+                    Pay with Cash
+                    <span class="payment-amount">Rs. {{ schedule.trainer.session_price }}</span>
+                </button>
+            </form>
+
+            <p class="cash-note mt-2">
+                <i class="bi bi-info-circle"></i>
+                Cash payment must be made at the front desk within 24 hours.
+            </p>
+
+            <a href="{% url 'trainer_detail' schedule.trainer.pk %}" class="back-link mt-3">
+                <i class="bi bi-arrow-left"></i> Back to Trainer
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function fillForm(type) {
+        const duration = document.getElementById('durationSelect').value;
+        const startDate = document.getElementById('startDateInput').value;
+
+        if (!startDate) {
+            alert('Please select a start date.');
+            return false;
+        }
+
+        if (type === 'khalti') {
+            document.getElementById('khaltiDuration').value = duration;
+            document.getElementById('khaltiStartDate').value = startDate;
+        } else {
+            document.getElementById('cashDuration').value = duration;
+            document.getElementById('cashStartDate').value = startDate;
+        }
+        return true;
+    }
+</script>
+{% endblock %}
