@@ -41,13 +41,45 @@
                 </div>
                 <div class="info-item">
                     <label>Status</label>
-                    <p><span class="membership-badge active">Active</span></p>
+                    <p>
+                        {% if subscription.subs_status == 'Active' %}
+                            <span class="membership-badge active">
+                                <i class="bi bi-check-circle-fill"></i> Active
+                            </span>
+                        {% elif subscription.subs_status == 'On Hold' %}
+                            <span class="membership-badge" style="background:#fff3cd; color:#856404;">
+                                <i class="bi bi-pause-circle-fill"></i> On Hold
+                            </span>
+                        {% endif %}
+                    </p>
                 </div>
             </div>
-
+            
             <div class="membership-desc mt-3">
                 <label>Plan Includes</label>
                 <p>{{ subscription.plan.description|default:"Access to all gym facilities." }}</p>
+            </div>
+
+            <div class="membership-actions mt-4 pt-3" style="border-top: 2px solid var(--bg);">
+                {% if subscription.subs_status == 'Active' %}
+                    <a href="{% url 'hold_membership' %}" class="client-btn-outline"
+                        style="color: var(--black); border-color: #ccc;">
+                        <i class="bi bi-pause-circle"></i> Hold Membership
+                    </a>
+                    <a href="{% url 'cancel_membership' %}" class="client-btn-danger ms-3">
+                        <i class="bi bi-x-circle"></i> Cancel Membership
+                    </a>
+                {% elif subscription.subs_status == 'On Hold' %}
+                    <div class="membership-badge" style="background:#fff3cd; color:#856404;">
+                        <i class="bi bi-pause-circle-fill"></i> Membership On Hold
+                    </div>
+                    <a href="{% url 'unhold_membership' %}" class="client-btn-green ms-3">
+                        <i class="bi bi-play-circle"></i> Resume Membership
+                    </a>
+                    <a href="{% url 'cancel_membership' %}" class="client-btn-danger ms-3">
+                        <i class="bi bi-x-circle"></i> Cancel Membership
+                    </a>
+                {% endif %}
             </div>
         </div>
 

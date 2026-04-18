@@ -37,6 +37,14 @@
             <!-- Right side -->
             <div class="client-nav-right">
                 {% if request.user.is_authenticated %}
+                    <!-- Notification Bell -->
+                    <a href="{% url 'notifications_list' %}" class="notification-bell">
+                        <i class="bi bi-bell-fill"></i>
+                        {% if unread_notification_count > 0 %}
+                            <span class="notification-badge">{{ unread_notification_count }}</span>
+                        {% endif %}
+                    </a>
+
                     <!-- Profile Dropdown -->
                     <div class="profile-dropdown">
                         <button class="client-profile-btn" id="profileDropdownBtn">

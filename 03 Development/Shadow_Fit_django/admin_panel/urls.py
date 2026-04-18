@@ -34,4 +34,14 @@ urlpatterns = [
     path('bookings/add/', views.booking_add, name='booking_add'),
     path('bookings/<int:pk>/update/', views.booking_update, name='booking_update'),
     path('bookings/<int:pk>/delete/', views.booking_delete, name='booking_delete'),
+
+    # Subscription URLs
+    path('subscriptions/', views.subscription_list, name='subscription_list'),
+    path('subscriptions/add/', views.subscription_add, name='subscription_add'),
+    path('subscriptions/<int:pk>/update/', views.subscription_update, name='subscription_update'),
+    path('subscriptions/<int:pk>/delete/', views.subscription_delete, name='subscription_delete'),
+
+    # Payment URLs
+    path('payments/', views.payment_list, name='payment_list'),
+    path('payments/<int:pk>/verify/', views.payment_verify, name='payment_verify'),
 ]

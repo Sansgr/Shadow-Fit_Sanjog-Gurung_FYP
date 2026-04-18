@@ -1,0 +1,68 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}Payments{% endblock %}
+{% block page_title %}View Payments{% endblock %}
+{% block breadcrumb %}Payments{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <span class="text-muted fs-6">
+        Total: <strong>{{ payments.count }}</strong> payments
+    </span>
+</div>
+
+<div class="admin-table">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Client</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Platform</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in payments %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ payment.user.get_full_name }}</td>
+                <td>Rs. {{ payment.amount }}</td>
+                <td>{{ payment.payment_method }}</td>
+                <td>{{ payment.platform|default:"—" }}</td>
+                <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                <td>
+                    {% if payment.payment_status == 'Completed' %}
+                        <span class="badge-status badge-confirmed">Completed</span>
+                    {% elif payment.payment_status == 'Pending' %}
+                        <span class="badge-status badge-pending">Pending</span>
+                    {% elif payment.payment_status == 'Failed' %}
+                        <span class="badge-status badge-cancelled">Failed</span>
+                    {% endif %}
+                </td>
+                <td style="white-space:nowrap;">
+                    {% if payment.payment_status == 'Pending' %}
+                        <a href="{% url 'payment_verify' payment.pk %}"
+                            class="btn-admin-success"
+                            style="padding:5px 12px; font-size:13px;">
+                            <i class="bi bi-check-lg"></i> Verify
+                        </a>
+                    {% else %}
+                        <span class="text-muted" style="font-size:13px;">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align:center; padding:30px; color:#999;">
+                    <i class="bi bi-credit-card fs-3 d-block mb-2"></i>
+                    No payments found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,10 +1,14 @@
+from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from datetime import date
+
 from admin_panel.decorators import admin_required
 from accounts.models import CustomUser
-from gym.models import Booking, MembershipPlan, Schedule, Trainer
-from admin_panel.forms import ClientForm, MembershipPlanForm, ScheduleForm, TrainerUserForm, TrainerProfileForm, BookingForm  
+from client_portal.notifications import notify_membership_cancelled, notify_membership_hold, notify_membership_purchased, notify_membership_unhold
+from gym.models import Booking, MembershipPlan, Payment, Schedule, Subscription, Trainer
+from admin_panel.forms import ClientForm, MembershipPlanForm, ScheduleForm, TrainerUserForm, TrainerProfileForm, BookingForm, AdminSubscriptionForm 
 
 
 # 1) ADMIN DASHBOARD 
@@ -304,3 +308,205 @@ def booking_delete(request, pk):
         messages.success(request, "Booking deleted successfully!")
         return redirect('booking_list')
     return render(request, 'admin_panel/bookings/booking_delete.html', {'booking': booking})
+
+
+# 7) SUBSCRIPTIONS (Admin CRUD)
+# a) SUBSCRIPTION LIST 
+@admin_required
+def subscription_list(request):
+    """
+    Shows all client subscriptions with their status.
+    """
+    try:
+        subscriptions = Subscription.objects.select_related(
+            'user', 'plan'
+        ).all().order_by('-start_date')
+    except Exception:
+        subscriptions = []
+        messages.error(request, "Failed to load subscriptions.")
+
+    return render(request, 'admin_panel/subscriptions/subscription_list.html', {
+        'subscriptions': subscriptions,
+    })
+
+
+# b) SUBSCRIPTION ADD 
+@admin_required
+def subscription_add(request):
+    """
+    Admin manually creates a subscription for a client.
+    Useful for walk-in clients paying at the front desk.
+    """
+    if request.method == 'POST':
+        form = AdminSubscriptionForm(request.POST)
+        if form.is_valid():
+            try:
+                subscription = form.save(commit=False)
+
+                # Auto-calculate end_date from start_date + plan duration
+                subscription.end_date = (
+                    subscription.start_date +
+                    relativedelta(months=subscription.plan.duration)
+                )
+                subscription.save()
+
+                # Notify client about new subscription
+                notify_membership_purchased(
+                    subscription.user,
+                    subscription.plan,
+                    'Cash'
+                )
+                messages.success(request, "Subscription created successfully!")
+                return redirect('subscription_list')
+            except Exception as e:
+                messages.error(request, "Failed to create subscription. Please try again.")
+        else:
+            messages.error(request, "Please fix the errors below.")
+    else:
+        form = AdminSubscriptionForm()
+
+    return render(request, 'admin_panel/subscriptions/subscription_add.html', {
+        'form': form,
+    })
+
+
+# c) SUBSCRIPTION UPDATE 
+@admin_required
+def subscription_update(request, pk):
+    """
+    Admin updates subscription details.
+    Status changes trigger notifications to the client.
+    """
+    try:
+        subscription = get_object_or_404(Subscription, pk=pk)
+        old_status = subscription.subs_status
+    except Exception:
+        messages.error(request, "Subscription not found.")
+        return redirect('subscription_list')
+
+    if request.method == 'POST':
+        form = AdminSubscriptionForm(request.POST, instance=subscription)
+        if form.is_valid():
+            try:
+                updated = form.save(commit=False)
+                new_status = updated.subs_status
+
+                # Recalculate end_date if plan or start_date changed
+                updated.end_date = (
+                    updated.start_date +
+                    relativedelta(months=updated.plan.duration)
+                )
+
+                # Handle hold logic — save hold_date when putting on hold
+                if new_status == 'On Hold' and old_status != 'On Hold':
+                    updated.hold_date = date.today()
+                    notify_membership_hold(subscription.user, subscription)
+
+                # Handle unhold — recalculate end_date from remaining days
+                elif new_status == 'Active' and old_status == 'On Hold':
+                    if subscription.hold_date:
+                        remaining = (subscription.end_date - subscription.hold_date).days
+                        remaining = max(0, remaining)
+                    else:
+                        remaining = (subscription.end_date - date.today()).days
+                        remaining = max(0, remaining)
+                    new_end = date.today() + timedelta(days=remaining)
+                    updated.end_date = new_end
+                    updated.hold_date = None
+                    notify_membership_unhold(subscription.user, subscription, new_end)
+
+                # Handle cancellation
+                elif new_status == 'Cancelled' and old_status != 'Cancelled':
+                    updated.hold_date = None
+                    notify_membership_cancelled(subscription.user, subscription)
+
+                updated.save()
+                messages.success(request, "Subscription updated successfully!")
+                return redirect('subscription_list')
+            except Exception:
+                messages.error(request, "Failed to update subscription. Please try again.")
+        else:
+            messages.error(request, "Please fix the errors below.")
+    else:
+        form = AdminSubscriptionForm(instance=subscription)
+
+    return render(request, 'admin_panel/subscriptions/subscription_update.html', {
+        'form': form,
+        'subscription': subscription,
+    })
+
+
+# d) SUBSCRIPTION DELETE
+@admin_required
+def subscription_delete(request, pk):
+    """
+    Admin permanently deletes a subscription record.
+    """
+    try:
+        subscription = get_object_or_404(Subscription, pk=pk)
+    except Exception:
+        messages.error(request, "Subscription not found.")
+        return redirect('subscription_list')
+
+    if request.method == 'POST':
+        try:
+            subscription.delete()
+            messages.success(request, "Subscription deleted successfully!")
+            return redirect('subscription_list')
+        except Exception:
+            messages.error(request, "Failed to delete subscription. Please try again.")
+
+    return render(request, 'admin_panel/subscriptions/subscription_delete.html', {
+        'subscription': subscription,
+    })
+
+
+# 8) PAYMENTS
+# a) PAYMENT LIST 
+@admin_required
+def payment_list(request):
+    """
+    Shows all payments with filter options.
+    """
+    try:
+        payments = Payment.objects.select_related('user').all().order_by('-payment_date')
+    except Exception:
+        payments = []
+        messages.error(request, "Failed to load payments.")
+
+    return render(request, 'admin_panel/payments/payment_list.html', {
+        'payments': payments,
+    })
+
+
+# b) PAYMENT VERIFY
+@admin_required
+def payment_verify(request, pk):
+    """
+    Admin verifies a pending cash payment —
+    marks it as Completed.
+    """
+    try:
+        payment = get_object_or_404(Payment, pk=pk)
+    except Exception:
+        messages.error(request, "Payment not found.")
+        return redirect('payment_list')
+
+    if request.method == 'POST':
+        try:
+            if payment.payment_status == 'Pending':
+                payment.payment_status = 'Completed'
+                payment.save()
+                messages.success(
+                    request,
+                    f"Payment of Rs. {payment.amount} verified successfully."
+                )
+            else:
+                messages.error(request, "This payment cannot be verified.")
+        except Exception:
+            messages.error(request, "Failed to verify payment. Please try again.")
+        return redirect('payment_list')
+
+    return render(request, 'admin_panel/payments/payment_verify.html', {
+        'payment': payment,
+    })

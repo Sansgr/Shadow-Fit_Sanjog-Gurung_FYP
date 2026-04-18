@@ -67,6 +67,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'client_portal.context_processors.notification_count',
             ],
         },
     },
@@ -145,3 +146,13 @@ KHALTI_PUBLIC_KEY = "7588c70baf694173b30f98a5496e88a6"
 
 # Disable APPEND_SLASH to prevent automatic redirection of URLs without trailing slashes
 APPEND_SLASH = False
+
+# ─── EMAIL CONFIGURATION ──────────────────────────────
+# Using Gmail SMTP for sending emails
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'grgsandriyos@gmail.com'       
+EMAIL_HOST_PASSWORD = 'epvp gsqg xvbm osvs'
+DEFAULT_FROM_EMAIL = 'Shadow Fit <grgsandriyos@gmail.com>'

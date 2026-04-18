@@ -94,6 +94,7 @@ class Booking(models.Model):
 class Subscription(models.Model):
     STATUS_CHOICES = (
         ('Active', 'Active'),
+        ('On Hold', 'On Hold'),
         ('Expired', 'Expired'),
         ('Cancelled', 'Cancelled'),
     )
@@ -111,6 +112,7 @@ class Subscription(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     subs_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
+    hold_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.get_full_name()} — {self.plan.plan_name} ({self.subs_status})"
@@ -143,3 +145,36 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.user.get_full_name()} — Rs.{self.amount} ({self.payment_status})"
+    
+
+# 7) Notification model to store notifications for users about their membership and bookings
+class Notification(models.Model):
+    TYPE_CHOICES = (
+        # Membership related
+        ('membership_purchased', 'Membership Purchased'),
+        ('membership_hold', 'Membership On Hold'),
+        ('membership_unhold', 'Membership Resumed'),
+        ('membership_cancelled', 'Membership Cancelled'),
+        # Booking related
+        ('booking_created', 'Booking Created'),
+        ('booking_confirmed', 'Booking Confirmed'),
+        ('booking_cancelled', 'Booking Cancelled'),
+        ('booking_completed', 'Booking Completed'),
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    notification_type = models.CharField(max_length=50, choices=TYPE_CHOICES)
+    title = models.CharField(max_length=150)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']  # newest first
+
+    def __str__(self):
+        return f"{self.user.username} — {self.title}"

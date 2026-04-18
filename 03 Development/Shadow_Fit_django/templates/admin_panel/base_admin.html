@@ -77,6 +77,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{% url 'subscription_list' %}"
+                        class="{% if 'subscription' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-card-checklist"></i> Subscriptions
+                    </a>
+                </li>
+                <li>
                     <a href="{% url 'booking_list' %}"
                         class="{% if 'booking' in request.resolver_match.url_name %}active{% endif %}">
                         <i class="bi bi-journal-check"></i> Bookings
@@ -86,7 +92,7 @@
                 <li class="sidebar-heading">Finance</li>
 
                 <li>
-                    <a href="#"
+                    <a href="{% url 'payment_list' %}"
                         class="{% if 'payment' in request.resolver_match.url_name %}active{% endif %}">
                         <i class="bi bi-credit-card"></i> Payments
                     </a>

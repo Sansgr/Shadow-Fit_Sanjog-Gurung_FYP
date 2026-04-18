@@ -2,7 +2,7 @@ from django import forms
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from accounts.models import CustomUser
-from gym.models import Booking, MembershipPlan, Schedule, Trainer
+from gym.models import Booking, MembershipPlan, Schedule, Subscription, Trainer
 
 # 1) Form for Client Management in Admin Panel
 class ClientForm(forms.ModelForm):
@@ -149,3 +149,29 @@ class BookingForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+    
+# 7) Form for Subscription Management in Admin Panel
+class AdminSubscriptionForm(forms.ModelForm):
+    """
+    Form for admin to manually create or update client subscriptions.
+    end_date is auto-calculated in the view — not shown in form.
+    """
+    class Meta:
+        model = Subscription
+        fields = [
+            'user',
+            'plan',
+            'start_date',
+            'subs_status',
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show Members in user dropdown
+        self.fields['user'].queryset = CustomUser.objects.filter(
+            role='Member'
+        ).order_by('first_name')
+        # Format user display nicely
+        self.fields['user'].label_from_instance = lambda obj: (
+            f"{obj.get_full_name()} (@{obj.username})"
+        )

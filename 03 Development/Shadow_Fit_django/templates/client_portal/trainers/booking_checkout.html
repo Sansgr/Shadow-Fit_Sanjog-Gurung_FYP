@@ -1,4 +1,5 @@
 {% extends "client_portal/base_client.html" %}
+{% load custom_filters %} 
 {% block title %}Book Trainer | Shadow Fit{% endblock %}
 
 {% block content %}
@@ -34,12 +35,15 @@
         <div class="checkout-payment-card">
             <h4><i class="bi bi-credit-card me-2"></i>Booking Details & Payment</h4>
 
-            <!-- Duration & Start Date (shared) -->
+            <!-- Duration & Start Date -->
             <div class="booking-fields">
                 <label>Duration</label>
                 <select id="durationSelect" class="booking-select">
                     {% for value, label in duration_choices %}
-                        <option value="{{ value }}">{{ label }}</option>
+                        <option value="{{ value }}"
+                            data-price="{{ duration_prices|get_item:value }}">
+                            {{ label }} — Rs. {{ duration_prices|get_item:value }}
+                        </option>
                     {% endfor %}
                 </select>
 
@@ -59,7 +63,9 @@
                     <img src="https://khalti.com/static/khalti-logo.png"
                         alt="Khalti" style="height:28px;">
                     Pay with Khalti
-                    <span class="payment-amount">Rs. {{ schedule.trainer.session_price }}</span>
+                    <span class="payment-amount" id="khaltiAmount">
+                        Rs. {{ duration_prices|get_item:'1 Week' }}
+                    </span>
                 </button>
             </form>
 
@@ -75,7 +81,9 @@
                     class="payment-method-btn cash-btn">
                     <i class="bi bi-cash-stack" style="font-size:24px;"></i>
                     Pay with Cash
-                    <span class="payment-amount">Rs. {{ schedule.trainer.session_price }}</span>
+                    <span class="payment-amount" id="cashAmount">
+                        Rs. {{ duration_prices|get_item:'1 Week' }}
+                    </span>
                 </button>
             </form>
 
@@ -93,8 +101,17 @@
 </div>
 
 <script>
+    const durationSelect = document.getElementById('durationSelect');
+
+    // Update prices when duration changes
+    durationSelect.addEventListener('change', function() {
+        const price = this.options[this.selectedIndex].dataset.price;
+        document.getElementById('khaltiAmount').textContent = 'Rs. ' + parseFloat(price).toFixed(2);
+        document.getElementById('cashAmount').textContent = 'Rs. ' + parseFloat(price).toFixed(2);
+    });
+
     function fillForm(type) {
-        const duration = document.getElementById('durationSelect').value;
+        const duration = durationSelect.value;
         const startDate = document.getElementById('startDateInput').value;
 
         if (!startDate) {

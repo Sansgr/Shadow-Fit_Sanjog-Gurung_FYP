@@ -1,0 +1,63 @@
+{% extends "client_portal/base_client.html" %}
+{% block title %}Notifications | Shadow Fit{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="my-membership-container" style="max-width: 800px;">
+
+        <h3 class="mb-4">
+            <i class="bi bi-bell-fill me-2 text-green"></i>Notifications
+        </h3>
+
+        {% if notifications %}
+            {% for notification in notifications %}
+            <div class="notification-card {% if not notification.is_read %}unread{% endif %}">
+
+                <!-- Icon based on notification type -->
+                <div class="notification-icon
+                    {% if 'membership' in notification.notification_type %}icon-green
+                    {% elif 'booking' in notification.notification_type %}icon-blue
+                    {% endif %}">
+                    {% if 'purchased' in notification.notification_type %}
+                        <i class="bi bi-bag-check-fill"></i>
+                    {% elif 'hold' in notification.notification_type %}
+                        <i class="bi bi-pause-circle-fill"></i>
+                    {% elif 'unhold' in notification.notification_type %}
+                        <i class="bi bi-play-circle-fill"></i>
+                    {% elif 'cancelled' in notification.notification_type %}
+                        <i class="bi bi-x-circle-fill"></i>
+                    {% elif 'confirmed' in notification.notification_type %}
+                        <i class="bi bi-check-circle-fill"></i>
+                    {% elif 'completed' in notification.notification_type %}
+                        <i class="bi bi-trophy-fill"></i>
+                    {% else %}
+                        <i class="bi bi-bell-fill"></i>
+                    {% endif %}
+                </div>
+
+                <!-- Notification content -->
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <h6>{{ notification.title }}</h6>
+                        <span class="notification-time">
+                            {{ notification.created_at|date:"M d, Y" }}
+                            {{ notification.created_at|time:"h:i A" }}
+                        </span>
+                    </div>
+                    <p>{{ notification.message|linebreaksbr }}</p>
+                </div>
+
+            </div>
+            {% endfor %}
+
+        {% else %}
+            <div class="no-membership-card">
+                <i class="bi bi-bell-slash" style="color: var(--text-muted);"></i>
+                <h5>No Notifications</h5>
+                <p>You have no notifications yet.</p>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
