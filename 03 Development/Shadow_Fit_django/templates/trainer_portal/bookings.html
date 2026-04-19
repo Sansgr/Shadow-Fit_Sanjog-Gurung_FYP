@@ -1,0 +1,138 @@
+{% extends "trainer_portal/base_trainer.html" %}
+{% block title %}Bookings{% endblock %}
+{% block page_title %}Manage Bookings{% endblock %}
+
+{% block content %}
+
+<!-- ─── Filter Bar ──────────────────────── -->
+<form method="GET" class="trainer-filter-bar mb-4">
+    <div class="d-flex gap-3 align-items-center flex-wrap">
+        <label style="font-size:14px; font-weight:500;">Filter by Status:</label>
+        {% for status in status_choices %}
+        <a href="?status={{ status }}"
+            class="trainer-filter-btn {% if status_filter == status %}active{% endif %}">
+            {{ status }}
+        </a>
+        {% endfor %}
+        {% if status_filter %}
+        <a href="{% url 'trainer_bookings' %}" class="trainer-filter-btn">
+            <i class="bi bi-x"></i> Clear
+        </a>
+        {% endif %}
+    </div>
+</form>
+
+<!-- ─── Bookings Table ───────────────────── -->
+<div class="trainer-card">
+    <div class="trainer-card-header">
+        <h6><i class="bi bi-journal-check me-2"></i>All Bookings</h6>
+        <span class="text-muted" style="font-size:13px;">
+            Total: {{ bookings.paginator.count }}
+        </span>
+    </div>
+
+    <div class="trainer-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Client</th>
+                    <th>Shift</th>
+                    <th>Duration</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Booked On</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        <strong>{{ booking.user.get_full_name }}</strong>
+                        <small class="d-block text-muted">
+                            {{ booking.user.email }}
+                        </small>
+                    </td>
+                    <td>
+                        <span class="shift-pill shift-{{ booking.schedule.shift_name|lower }}">
+                            {{ booking.schedule.shift_name }}
+                        </span>
+                    </td>
+                    <td>{{ booking.duration }}</td>
+                    <td>{{ booking.start_date|date:"M d, Y" }}</td>
+                    <td>{{ booking.end_date|date:"M d, Y"|default:"—" }}</td>
+                    <td>{{ booking.booking_date|date:"M d, Y" }}</td>
+                    <td>
+                        {% if booking.booking_status == 'Pending' %}
+                            <span class="trainer-badge-status pending">Pending</span>
+                        {% elif booking.booking_status == 'Confirmed' %}
+                            <span class="trainer-badge-status confirmed">Confirmed</span>
+                        {% elif booking.booking_status == 'Cancelled' %}
+                            <span class="trainer-badge-status cancelled">Cancelled</span>
+                        {% elif booking.booking_status == 'Completed' %}
+                            <span class="trainer-badge-status completed">Completed</span>
+                        {% endif %}
+                    </td>
+                    <td style="white-space:nowrap;">
+                        {% if booking.booking_status == 'Pending' %}
+                            <a href="{% url 'accept_booking' booking.pk %}"
+                                class="trainer-btn-success"
+                                style="padding:5px 10px; font-size:12px;">
+                                <i class="bi bi-check-lg"></i> Accept
+                            </a>
+                            <a href="{% url 'reject_booking' booking.pk %}"
+                                class="trainer-btn-danger"
+                                style="padding:5px 10px; font-size:12px; margin-left:4px;">
+                                <i class="bi bi-x-lg"></i> Reject
+                            </a>
+                        {% else %}
+                            <span class="text-muted" style="font-size:13px;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" style="text-align:center; padding:30px; color:#999;">
+                        <i class="bi bi-journal-x d-block mb-2" style="font-size:24px;"></i>
+                        No bookings found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if bookings.has_other_pages %}
+    <div class="d-flex justify-content-between align-items-center mt-3 px-3 pb-3">
+        <small class="text-muted">
+            Showing {{ bookings.start_index }}–{{ bookings.end_index }}
+            of {{ bookings.paginator.count }}
+        </small>
+        <div class="d-flex gap-2">
+            {% if bookings.has_previous %}
+                <a href="?page={{ bookings.previous_page_number }}&status={{ status_filter }}"
+                    class="trainer-page-btn">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            {% endif %}
+            {% for num in bookings.paginator.page_range %}
+                <a href="?page={{ num }}&status={{ status_filter }}"
+                    class="trainer-page-btn {% if bookings.number == num %}active{% endif %}">
+                    {{ num }}
+                </a>
+            {% endfor %}
+            {% if bookings.has_next %}
+                <a href="?page={{ bookings.next_page_number }}&status={{ status_filter }}"
+                    class="trainer-page-btn">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

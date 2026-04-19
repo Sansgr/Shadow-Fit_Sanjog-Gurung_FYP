@@ -9,6 +9,7 @@
             <i class="bi bi-journal-check me-2 text-green"></i>My Bookings
         </h3>
 
+        <!-- ─── Active Bookings ───────────────────── -->
         {% if bookings %}
             {% for booking in bookings %}
             <div class="booking-detail-card mb-4">
@@ -43,7 +44,10 @@
                     </div>
                     <div class="info-item">
                         <label>Time</label>
-                        <p>{{ booking.schedule.start_time|time:"h:i A" }} — {{ booking.schedule.end_time|time:"h:i A" }}</p>
+                        <p>
+                            {{ booking.schedule.start_time|time:"h:i A" }} —
+                            {{ booking.schedule.end_time|time:"h:i A" }}
+                        </p>
                     </div>
                     <div class="info-item">
                         <label>Duration</label>
@@ -63,98 +67,124 @@
                     </div>
                 </div>
 
-                {% if booking.booking_status in 'Pending,Confirmed' %}
+                {% if booking.booking_status == 'Pending' or booking.booking_status == 'Confirmed' %}
                 <div class="mt-3">
-                    <a href="{% url 'cancel_booking' booking.pk %}"
-                        class="client-btn-danger">
+                    <a href="{% url 'cancel_booking' booking.pk %}" class="client-btn-danger">
                         <i class="bi bi-x-circle"></i> Cancel Booking
                     </a>
                 </div>
                 {% endif %}
-            </div>
-            {% endfor %}
 
-            <!-- ─── Booking History ───────────────────────── -->
-            {% if history %}
-            <h4 class="mt-5 mb-3">
-                <i class="bi bi-clock-history me-2 text-green"></i>Booking History
-            </h4>
-            {% for h in history %}
-            <div class="booking-detail-card mb-3"
-                style="opacity: 0.85; border-left: 4px solid #dee2e6;">
-                <div class="booking-card-header">
-                    <div>
-                        <h5>{{ h.schedule.trainer.user.get_full_name }}</h5>
-                        <span class="trainer-specialty">
-                            {{ h.schedule.trainer.specialty }}
-                        </span>
-                    </div>
-                    <div>
-                        {% if h.booking_status == 'Cancelled' %}
-                            <span class="badge-status badge-cancelled">Cancelled</span>
-                        {% elif h.booking_status == 'Completed' %}
-                            <span class="badge-status badge-completed">Completed</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="booking-detail-grid">
-                    <div class="info-item">
-                        <label>Shift</label>
-                        <p>
-                            <span class="shift-badge shift-{{ h.schedule.shift_name|lower }}">
-                                {{ h.schedule.shift_name }}
-                            </span>
-                        </p>
-                    </div>
-                    <div class="info-item">
-                        <label>Duration</label>
-                        <p>{{ h.duration }}</p>
-                    </div>
-                    <div class="info-item">
-                        <label>Start Date</label>
-                        <p>{{ h.start_date|date:"M d, Y" }}</p>
-                    </div>
-                    <div class="info-item">
-                        <label>End Date</label>
-                        <p>{{ h.end_date|date:"M d, Y"|default:"—" }}</p>
-                    </div>
-                </div>
             </div>
-            {% endfor %}
-
-            <!-- Pagination -->
-            {% if history.has_other_pages %}
-            <div class="pagination-bar mt-3">
-                {% if history.has_previous %}
-                    <a href="?history_page={{ history.previous_page_number }}" class="page-btn">
-                        <i class="bi bi-chevron-left"></i>
-                    </a>
-                {% endif %}
-                {% for num in history.paginator.page_range %}
-                    <a href="?history_page={{ num }}"
-                        class="page-btn {% if history.number == num %}active{% endif %}">
-                        {{ num }}
-                    </a>
-                {% endfor %}
-                {% if history.has_next %}
-                    <a href="?history_page={{ history.next_page_number }}" class="page-btn">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                {% endif %}
-            </div>
-            {% endif %}
-            {% endif %}
+            {% endfor %}  {# end for booking #}
 
         {% else %}
-        <div class="no-membership-card">
-            <i class="bi bi-journal-x" style="color: var(--text-muted);"></i>
-            <h5>No Bookings Yet</h5>
-            <p>You haven't booked any trainer sessions yet.</p>
-            <a href="{% url 'trainer_list' %}" class="client-btn-green mt-3">
-                <i class="bi bi-person-badge"></i> Browse Trainers
-            </a>
+            <div class="no-membership-card">
+                <i class="bi bi-journal-x" style="color: var(--text-muted);"></i>
+                <h5>No Active Bookings</h5>
+                <p>You haven't booked any trainer sessions yet.</p>
+                <a href="{% url 'trainer_list' %}" class="client-btn-green mt-3">
+                    <i class="bi bi-person-badge"></i> Browse Trainers
+                </a>
+            </div>
+        {% endif %}  {# end if bookings #}
+
+        <!-- ─── Booking History ───────────────────── -->
+        {% if history %}
+        <h4 class="mt-5 mb-3">
+            <i class="bi bi-clock-history me-2 text-green"></i>Booking History
+        </h4>
+
+        {% for h in history %}
+        <div class="booking-detail-card mb-3"
+            style="opacity:0.85; border-left:4px solid #dee2e6;">
+            <div class="booking-card-header">
+                <div>
+                    <h5>{{ h.schedule.trainer.user.get_full_name }}</h5>
+                    <span class="trainer-specialty">
+                        {{ h.schedule.trainer.specialty }}
+                    </span>
+                </div>
+                <div>
+                    {% if h.booking_status == 'Cancelled' %}
+                        <span class="badge-status badge-cancelled">Cancelled</span>
+                    {% elif h.booking_status == 'Completed' %}
+                        <span class="badge-status badge-completed">Completed</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="booking-detail-grid">
+                <div class="info-item">
+                    <label>Shift</label>
+                    <p>
+                        <span class="shift-badge shift-{{ h.schedule.shift_name|lower }}">
+                            {{ h.schedule.shift_name }}
+                        </span>
+                    </p>
+                </div>
+                <div class="info-item">
+                    <label>Duration</label>
+                    <p>{{ h.duration }}</p>
+                </div>
+                <div class="info-item">
+                    <label>Start Date</label>
+                    <p>{{ h.start_date|date:"M d, Y" }}</p>
+                </div>
+                <div class="info-item">
+                    <label>End Date</label>
+                    <p>{{ h.end_date|date:"M d, Y"|default:"—" }}</p>
+                </div>
+            </div>
+
+            <!-- Review button for Completed bookings -->
+            {% if h.booking_status == 'Completed' %}
+                {% if h.feedback %}
+                    <div class="mt-3">
+                        <span style="color:var(--green); font-size:13px;">
+                            <i class="bi bi-star-fill"></i>
+                            Reviewed ({{ h.feedback.rating }}/5)
+                        </span>
+                    </div>
+                {% else %}
+                    <div class="mt-3">
+                        <a href="{% url 'review_trainer' h.pk %}"
+                            class="client-btn-green"
+                            style="padding:6px 14px; font-size:13px;">
+                            <i class="bi bi-star"></i> Write Review
+                        </a>
+                    </div>
+                {% endif %}
+            {% endif %}
+
+        </div>
+        {% endfor %}  {# end for h #}
+
+        <!-- History Pagination -->
+        {% if history.has_other_pages %}
+        <div class="pagination-bar mt-3">
+            {% if history.has_previous %}
+                <a href="?history_page={{ history.previous_page_number }}"
+                    class="page-btn">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            {% endif %}
+            {% for num in history.paginator.page_range %}
+                <a href="?history_page={{ num }}"
+                    class="page-btn {% if history.number == num %}active{% endif %}">
+                    {{ num }}
+                </a>
+            {% endfor %}
+            {% if history.has_next %}
+                <a href="?history_page={{ history.next_page_number }}"
+                    class="page-btn">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            {% endif %}
         </div>
         {% endif %}
+
+        {% endif %}  {# end if history #}
 
     </div>
 </div>

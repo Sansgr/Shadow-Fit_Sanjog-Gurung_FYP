@@ -1,0 +1,109 @@
+{% extends "trainer_portal/base_trainer.html" %}
+{% block title %}Reviews{% endblock %}
+{% block page_title %}My Reviews{% endblock %}
+
+{% block content %}
+
+<!-- ─── Summary ──────────────────────────── -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="trainer-stat-card">
+            <div class="stat-icon" style="background:#f39c12;">
+                <i class="bi bi-star-fill"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ avg_rating }}</h3>
+                <p>Avg Rating</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="trainer-stat-card">
+            <div class="stat-icon" style="background:#3498db;">
+                <i class="bi bi-chat-left-text"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_reviews }}</h3>
+                <p>Total Reviews</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Reviews List ─────────────────────── -->
+<div class="trainer-card">
+    <div class="trainer-card-header">
+        <h6><i class="bi bi-star me-2"></i>Client Reviews</h6>
+    </div>
+
+    {% if feedbacks %}
+    {% for feedback in feedbacks %}
+    <div class="review-item">
+        <div class="review-header">
+            <div class="review-user">
+                {% if feedback.user.photo %}
+                    <img src="{{ feedback.user.photo.url }}"
+                        style="width:40px; height:40px; border-radius:50%;
+                            object-fit:cover; margin-right:10px;">
+                {% else %}
+                    <i class="bi bi-person-circle"
+                        style="font-size:36px; color:#ccc; margin-right:10px;"></i>
+                {% endif %}
+                <div>
+                    <strong>{{ feedback.user.get_full_name }}</strong>
+                    <small class="d-block text-muted">
+                        {{ feedback.date_given|date:"M d, Y" }}
+                    </small>
+                </div>
+            </div>
+            <div class="review-stars">
+                {% for i in "12345" %}
+                    {% if forloop.counter <= feedback.rating %}
+                        <i class="bi bi-star-fill" style="color:#f39c12;"></i>
+                    {% else %}
+                        <i class="bi bi-star" style="color:#ddd;"></i>
+                    {% endif %}
+                {% endfor %}
+                <span style="font-size:13px; color:#666; margin-left:6px;">
+                    {{ feedback.rating }}/5
+                </span>
+            </div>
+        </div>
+        {% if feedback.comment %}
+        <p class="review-comment">{{ feedback.comment }}</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- Pagination -->
+    {% if feedbacks.has_other_pages %}
+    <div class="d-flex justify-content-center gap-2 mt-4 pb-3">
+        {% if feedbacks.has_previous %}
+            <a href="?page={{ feedbacks.previous_page_number }}"
+                class="trainer-page-btn">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        {% endif %}
+        {% for num in feedbacks.paginator.page_range %}
+            <a href="?page={{ num }}"
+                class="trainer-page-btn {% if feedbacks.number == num %}active{% endif %}">
+                {{ num }}
+            </a>
+        {% endfor %}
+        {% if feedbacks.has_next %}
+            <a href="?page={{ feedbacks.next_page_number }}"
+                class="trainer-page-btn">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="trainer-empty">
+        <i class="bi bi-star"></i>
+        <p>No reviews yet. Complete sessions to receive reviews!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

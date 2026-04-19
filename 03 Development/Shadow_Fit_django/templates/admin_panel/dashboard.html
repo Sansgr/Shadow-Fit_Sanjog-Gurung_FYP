@@ -4,9 +4,18 @@
 {% block breadcrumb %}Dashboard{% endblock %}
 
 {% block content %}
+
+<!-- Hidden JSON data — safe way to pass Django data to JS -->
+{{ revenue_labels|json_script:"revenue-labels" }}
+{{ revenue_data|json_script:"revenue-data" }}
+{{ sub_labels|json_script:"sub-labels" }}
+{{ sub_counts|json_script:"sub-counts" }}
+{{ booking_labels|json_script:"booking-labels" }}
+{{ booking_counts|json_script:"booking-counts" }}
+
 <!-- ─── Stat Cards ──────────────────────────── -->
 <div class="row g-4 mb-4">
-    <div class="col-md-2">
+    <div class="col-xl-2 col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon bg-blue">
                 <i class="bi bi-people-fill"></i>
@@ -17,7 +26,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col-xl-2 col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon bg-green">
                 <i class="bi bi-person-badge-fill"></i>
@@ -28,7 +37,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col-xl-2 col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon bg-orange">
                 <i class="bi bi-journal-check"></i>
@@ -39,7 +48,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col-xl-2 col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon bg-purple">
                 <i class="bi bi-card-checklist"></i>
@@ -50,7 +59,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col-xl-2 col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon" style="background:#e67e22;">
                 <i class="bi bi-clock-history"></i>
@@ -61,13 +70,13 @@
             </div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col-xl-2 col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon" style="background:#27ae60;">
                 <i class="bi bi-currency-rupee"></i>
             </div>
             <div class="stat-info">
-                <h3>{{ total_revenue }}</h3>
+                <h3>Rs. {{ total_revenue }}</h3>
                 <p>Total Revenue</p>
             </div>
         </div>
@@ -76,25 +85,54 @@
 
 <!-- ─── Charts Row ─────────────────────────── -->
 <div class="row g-4 mb-4">
-    <!-- Monthly Revenue Chart -->
+    <!-- Monthly Revenue Bar Chart -->
     <div class="col-md-8">
         <div class="admin-chart-card">
-            <h6 class="chart-title">Monthly Revenue</h6>
+            <h6 class="chart-title">
+                <i class="bi bi-bar-chart-fill me-2" style="color:var(--green);"></i>
+                Monthly Revenue
+            </h6>
             <canvas id="revenueChart" height="100"></canvas>
         </div>
     </div>
-    <!-- Subscription Status Chart -->
+    <!-- Subscription Status Doughnut Chart -->
     <div class="col-md-4">
         <div class="admin-chart-card">
-            <h6 class="chart-title">Subscription Status</h6>
+            <h6 class="chart-title">
+                <i class="bi bi-pie-chart-fill me-2" style="color:var(--green);"></i>
+                Subscription Status
+            </h6>
             <canvas id="subStatusChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Charts Row 2 ────────────────────────── -->
+<div class="row g-4 mb-4">
+    <!-- Booking Status Pie Chart -->
+    <div class="col-md-4">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">
+                <i class="bi bi-pie-chart me-2" style="color:var(--green);"></i>
+                Booking Status
+            </h6>
+            <canvas id="bookingStatusChart"></canvas>
+        </div>
+    </div>
+    <!-- Revenue Line Chart (same data, different view) -->
+    <div class="col-md-8">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">
+                <i class="bi bi-graph-up me-2" style="color:var(--green);"></i>
+                Revenue Trend
+            </h6>
+            <canvas id="revenueTrendChart" height="100"></canvas>
         </div>
     </div>
 </div>
 
 <!-- ─── Recent Activity Row ───────────────── -->
 <div class="row g-4">
-    <!-- Recent Bookings -->
     <div class="col-md-6">
         <div class="admin-chart-card">
             <h6 class="chart-title">Recent Bookings</h6>
@@ -126,7 +164,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="3" style="text-align:center; color:#999;">
+                            <td colspan="3" style="text-align:center; color:#999; padding:20px;">
                                 No bookings yet.
                             </td>
                         </tr>
@@ -136,8 +174,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Recent Payments -->
     <div class="col-md-6">
         <div class="admin-chart-card">
             <h6 class="chart-title">Recent Payments</h6>
@@ -167,7 +203,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="3" style="text-align:center; color:#999;">
+                            <td colspan="3" style="text-align:center; color:#999; padding:20px;">
                                 No payments yet.
                             </td>
                         </tr>
@@ -179,26 +215,26 @@
     </div>
 </div>
 
-<!-- Chart.js -->
+<!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Parse JSON safely
+    // Parse JSON safely using json_script filter IDs
     const revenueLabels = JSON.parse(document.getElementById('revenue-labels').textContent);
     const revenueData = JSON.parse(document.getElementById('revenue-data').textContent);
-
     const subLabels = JSON.parse(document.getElementById('sub-labels').textContent);
     const subCounts = JSON.parse(document.getElementById('sub-counts').textContent);
+    const bookingLabels = JSON.parse(document.getElementById('booking-labels').textContent);
+    const bookingCounts = JSON.parse(document.getElementById('booking-counts').textContent);
 
-    // ─── Monthly Revenue Bar Chart ─────────────────
-    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    new Chart(revenueCtx, {
+    // ─── 1. Monthly Revenue Bar Chart ─────────────
+    new Chart(document.getElementById('revenueChart'), {
         type: 'bar',
         data: {
             labels: revenueLabels,
             datasets: [{
                 label: 'Revenue (Rs.)',
                 data: revenueData,
-                backgroundColor: 'rgba(32, 192, 92, 0.7)',
+                backgroundColor: 'rgba(32, 192, 92, 0.75)',
                 borderColor: '#20c05c',
                 borderWidth: 2,
                 borderRadius: 6
@@ -214,23 +250,68 @@
         }
     });
 
-    // ─── Subscription Status Doughnut Chart ────────
-    const subCtx = document.getElementById('subStatusChart').getContext('2d');
-    new Chart(subCtx, {
+    // ─── 2. Subscription Status Doughnut Chart ─────
+    new Chart(document.getElementById('subStatusChart'), {
         type: 'doughnut',
         data: {
             labels: subLabels,
             datasets: [{
                 data: subCounts,
-                backgroundColor: ['#20c05c', '#f39c12', '#e74c3c', '#3498db']
+                backgroundColor: ['#20c05c', '#f39c12', '#e74c3c', '#3498db'],
+                borderWidth: 2,
+                borderColor: '#fff'
             }]
         },
         options: {
             responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    // ─── 3. Booking Status Pie Chart ───────────────
+    new Chart(document.getElementById('bookingStatusChart'), {
+        type: 'pie',
+        data: {
+            labels: bookingLabels,
+            datasets: [{
+                data: bookingCounts,
+                backgroundColor: ['#f39c12', '#20c05c', '#e74c3c', '#3498db'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    // ─── 4. Revenue Trend Line Chart ───────────────
+    new Chart(document.getElementById('revenueTrendChart'), {
+        type: 'line',
+        data: {
+            labels: revenueLabels,
+            datasets: [{
+                label: 'Revenue Trend (Rs.)',
+                data: revenueData,
+                borderColor: '#20c05c',
+                backgroundColor: 'rgba(32, 192, 92, 0.1)',
+                borderWidth: 2,
+                pointBackgroundColor: '#20c05c',
+                pointRadius: 4,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                x: { grid: { display: false } }
             }
         }
     });
 </script>
+
 {% endblock %}

@@ -196,3 +196,34 @@ class Inquiry(models.Model):
 
     def __str__(self):
         return f"{self.subject} — {self.date_sent.strftime('%Y-%m-%d')}"
+    
+# 9) Feedback model to store client reviews/ratings for trainers after completed bookings
+class Feedback(models.Model):
+    """
+    Client review/rating for a trainer.
+    Only allowed after booking is Completed.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'Member'}
+    )
+    trainer = models.ForeignKey(
+        Trainer,
+        on_delete=models.CASCADE,
+        related_name='feedbacks'
+    )
+    booking = models.OneToOneField(
+        'Booking',
+        on_delete=models.CASCADE,
+        related_name='feedback',
+        null=True, blank=True
+    )
+    rating = models.IntegerField(
+        choices=[(i, i) for i in range(1, 6)]  # 1-5 stars
+    )
+    comment = models.TextField(max_length=500, blank=True)
+    date_given = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} → {self.trainer.user.get_full_name()} ({self.rating}★)"

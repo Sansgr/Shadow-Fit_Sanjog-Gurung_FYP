@@ -2,7 +2,7 @@ import json
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Avg, Q
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
@@ -12,7 +12,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from accounts import models
 from admin_panel.decorators import admin_required
 from accounts.models import CustomUser
-from gym.models import Booking, MembershipPlan, Payment, Schedule, Subscription, Trainer
+from gym.models import Booking, Feedback, Feedback, MembershipPlan, Payment, Schedule, Subscription, Trainer
 from admin_panel.forms import ClientForm, MembershipPlanForm, ScheduleForm, TrainerUserForm, TrainerProfileForm, BookingForm, AdminSubscriptionForm
 from client_portal.notifications import (
     notify_membership_purchased,
@@ -48,8 +48,12 @@ def admin_dashboard(request):
         total_clients = CustomUser.objects.filter(role='Member').count()
         total_trainers = Trainer.objects.count()
         total_bookings = Booking.objects.count()
-        active_subscriptions = Subscription.objects.filter(subs_status='Active').count()
-        pending_payments = Payment.objects.filter(payment_status='Pending').count()
+        active_subscriptions = Subscription.objects.filter(
+            subs_status='Active'
+        ).count()
+        pending_payments = Payment.objects.filter(
+            payment_status='Pending'
+        ).count()
         total_revenue = Payment.objects.filter(
             payment_status='Completed'
         ).aggregate(total=Sum('amount'))['total'] or 0
@@ -63,43 +67,60 @@ def admin_dashboard(request):
             'user'
         ).order_by('-payment_date')[:5]
 
-        # ─── Monthly Revenue Chart Data ───────────────
-        monthly_revenue = Payment.objects.filter(
-            payment_status='Completed'
-        ).annotate(
-            month=TruncMonth('payment_date')
-        ).values('month').annotate(
-            total=Sum('amount')
-        ).order_by('month')[:6]
-
-        revenue_labels = [
-            item['month'].strftime('%b %Y') for item in monthly_revenue
-        ]
-        revenue_data = [
-            float(item['total']) for item in monthly_revenue
-        ]
-
-        # ─── Booking Status Chart Data ─────────────────
-        booking_status = Booking.objects.values('booking_status').annotate(
-            count=Count('id')
+        # ─── Monthly Revenue Chart ────────────────────
+        monthly_revenue = list(
+            Payment.objects.filter(
+                payment_status='Completed'
+            ).annotate(
+                month=TruncMonth('payment_date')
+            ).values('month').annotate(
+                total=Sum('amount')
+            ).order_by('month')[:6]
         )
-        booking_labels = [item['booking_status'] for item in booking_status]
-        booking_counts = [item['count'] for item in booking_status]
-
-        # ─── Subscription Status Chart Data ───────────
-        sub_status = Subscription.objects.values('subs_status').annotate(
-            count=Count('id')
+        # Serialize to JSON strings for json_script filter
+        revenue_labels = json.dumps(
+            [item['month'].strftime('%b %Y') for item in monthly_revenue]
         )
-        sub_labels = [item['subs_status'] for item in sub_status]
-        sub_counts = [item['count'] for item in sub_status]
+        revenue_data = json.dumps(
+            [float(item['total']) for item in monthly_revenue]
+        )
+
+        # ─── Booking Status Chart ─────────────────────
+        booking_status_qs = list(
+            Booking.objects.values('booking_status').annotate(
+                count=Count('id')
+            )
+        )
+        booking_labels = json.dumps(
+            [item['booking_status'] for item in booking_status_qs]
+        )
+        booking_counts = json.dumps(
+            [item['count'] for item in booking_status_qs]
+        )
+
+        # ─── Subscription Status Chart ────────────────
+        sub_status_qs = list(
+            Subscription.objects.values('subs_status').annotate(
+                count=Count('id')
+            )
+        )
+        sub_labels = json.dumps(
+            [item['subs_status'] for item in sub_status_qs]
+        )
+        sub_counts = json.dumps(
+            [item['count'] for item in sub_status_qs]
+        )
 
     except Exception as e:
+        import traceback
+        print(f"[Dashboard Error] {e}")
+        print(traceback.format_exc())
         total_clients = total_trainers = total_bookings = 0
         active_subscriptions = pending_payments = total_revenue = 0
         recent_bookings = recent_payments = []
-        revenue_labels = revenue_data = []
-        booking_labels = booking_counts = []
-        sub_labels = sub_counts = []
+        revenue_labels = revenue_data = '[]'
+        booking_labels = booking_counts = '[]'
+        sub_labels = sub_counts = '[]'
         messages.error(request, "Failed to load dashboard data.")
 
     return render(request, 'admin_panel/dashboard.html', {
@@ -111,13 +132,13 @@ def admin_dashboard(request):
         'total_revenue': total_revenue,
         'recent_bookings': recent_bookings,
         'recent_payments': recent_payments,
-        # JSON for charts
-        'revenue_labels': json.dumps(revenue_labels),
-        'revenue_data': json.dumps(revenue_data),
-        'booking_labels': json.dumps(booking_labels),
-        'booking_counts': json.dumps(booking_counts),
-        'sub_labels': json.dumps(sub_labels),
-        'sub_counts': json.dumps(sub_counts),
+        # Already JSON strings — json_script will wrap them safely
+        'revenue_labels': revenue_labels,
+        'revenue_data': revenue_data,
+        'booking_labels': booking_labels,
+        'booking_counts': booking_counts,
+        'sub_labels': sub_labels,
+        'sub_counts': sub_counts,
     })
 
 
@@ -726,18 +747,62 @@ def payment_verify(request, pk):
         'payment': payment,
     })
 
-# 9) REPORTS
+# 9) FEEDBACK MANAGEMENT
+# a) FEEDBACK LIST
+@admin_required
+def feedback_list(request):
+    """
+    Admin view of all client feedback/reviews for trainers.
+    """
+    try:
+        feedbacks = Feedback.objects.select_related(
+            'user', 'trainer__user'
+        ).all().order_by('-date_given')
+    except Exception:
+        feedbacks = []
+        messages.error(request, "Failed to load feedback.")
+
+    feedbacks_page = paginate(feedbacks, request, 15)
+    return render(request, 'admin_panel/feedback_list.html', {
+        'feedbacks': feedbacks_page,
+    })
+
+# b) FEEDBACK DELETE
+@admin_required
+def feedback_delete(request, pk):
+    """
+    Admin can delete inappropriate feedback.
+    """
+    try:
+        feedback = get_object_or_404(Feedback, pk=pk)
+    except Exception:
+        messages.error(request, "Feedback not found.")
+        return redirect('feedback_list')
+
+    if request.method == 'POST':
+        try:
+            feedback.delete()
+            messages.success(request, "Feedback deleted successfully.")
+        except Exception:
+            messages.error(request, "Failed to delete feedback.")
+        return redirect('feedback_list')
+
+    return render(request, 'admin_panel/feedback_delete.html', {
+        'feedback': feedback,
+    })
+
+
+# 10) REPORTS
 @admin_required
 def reports(request):
     """
-    Generate membership, booking, and trainer performance reports.
+    Generate membership, booking, and trainer performance reports
+    with chart data.
     """
     try:
         report_type = request.GET.get('type', 'membership')
         period = request.GET.get('period', 'all')
 
-        # ─── Date filter ──────────────────────────────
-        from datetime import timedelta
         today = date.today()
         if period == 'week':
             start_filter = today - timedelta(weeks=1)
@@ -748,13 +813,35 @@ def reports(request):
         else:
             start_filter = None
 
-        # ─── Membership Report ────────────────────────
+        # ─── Membership Report Data ───────────────
         subscriptions = Subscription.objects.select_related('user', 'plan').all()
         if start_filter:
             subscriptions = subscriptions.filter(start_date__gte=start_filter)
         subscriptions = subscriptions.order_by('-start_date')
 
-        # ─── Booking Report ───────────────────────────
+        # Membership status chart data
+        subs_by_status = Subscription.objects.values('subs_status').annotate(
+            count=Count('id')
+        )
+        subs_status_labels = json.dumps(
+            [item['subs_status'] for item in subs_by_status]
+        )
+        subs_status_counts = json.dumps(
+            [item['count'] for item in subs_by_status]
+        )
+
+        # Plans popularity bar chart
+        plans_popularity = MembershipPlan.objects.annotate(
+            sub_count=Count('subscription')
+        ).values('plan_name', 'sub_count').order_by('-sub_count')
+        plans_labels = json.dumps(
+            [item['plan_name'] for item in plans_popularity]
+        )
+        plans_counts = json.dumps(
+            [item['sub_count'] for item in plans_popularity]
+        )
+
+        # ─── Booking Report Data ──────────────────
         bookings = Booking.objects.select_related(
             'user', 'schedule__trainer__user'
         ).all()
@@ -762,16 +849,53 @@ def reports(request):
             bookings = bookings.filter(booking_date__gte=start_filter)
         bookings = bookings.order_by('-booking_date')
 
-        # ─── Trainer Performance ─────────────────────
+        # Booking status chart
+        bookings_by_status = Booking.objects.values('booking_status').annotate(
+            count=Count('id')
+        )
+        booking_status_labels = json.dumps(
+            [item['booking_status'] for item in bookings_by_status]
+        )
+        booking_status_counts = json.dumps(
+            [item['count'] for item in bookings_by_status]
+        )
+
+        # Monthly bookings line chart
+        monthly_bookings = Booking.objects.annotate(
+            month=TruncMonth('booking_date')
+        ).values('month').annotate(
+            count=Count('id')
+        ).order_by('month')[:6]
+        monthly_booking_labels = json.dumps(
+            [item['month'].strftime('%b %Y') for item in monthly_bookings]
+        )
+        monthly_booking_counts = json.dumps(
+            [item['count'] for item in monthly_bookings]
+        )
+
+        # ─── Trainer Performance Data ─────────────
         trainer_performance = Trainer.objects.select_related('user').annotate(
             total_bookings=Count('schedules__bookings'),
             confirmed_bookings=Count(
                 'schedules__bookings',
-                filter=models.Q(schedules__bookings__booking_status='Confirmed')
+                filter=Q(schedules__bookings__booking_status='Confirmed')
             ),
+            avg_rating=Avg('feedbacks__rating'),
         ).order_by('-total_bookings')
 
-        # ─── Summary Stats ────────────────────────────
+        # Trainer bookings bar chart
+        trainer_names = json.dumps(
+            [t.user.get_full_name() for t in trainer_performance]
+        )
+        trainer_booking_counts = json.dumps(
+            [t.total_bookings for t in trainer_performance]
+        )
+        trainer_ratings = json.dumps(
+            [round(float(t.avg_rating), 1) if t.avg_rating else 0
+             for t in trainer_performance]
+        )
+
+        # ─── Revenue Stats ────────────────────────
         total_revenue = Payment.objects.filter(
             payment_status='Completed'
         ).aggregate(total=Sum('amount'))['total'] or 0
@@ -785,11 +909,19 @@ def reports(request):
             period_revenue = total_revenue
 
     except Exception as e:
+        import traceback
+        print(f"[Report Error] {e}")
+        print(traceback.format_exc())
         subscriptions = bookings = trainer_performance = []
         total_revenue = period_revenue = 0
+        subs_status_labels = subs_status_counts = '[]'
+        plans_labels = plans_counts = '[]'
+        booking_status_labels = booking_status_counts = '[]'
+        monthly_booking_labels = monthly_booking_counts = '[]'
+        trainer_names = trainer_booking_counts = trainer_ratings = '[]'
         messages.error(request, "Failed to generate reports.")
 
-    # Paginate report data
+    # Paginate table data
     if report_type == 'membership':
         data = paginate(subscriptions, request, 15)
     elif report_type == 'booking':
@@ -801,9 +933,18 @@ def reports(request):
         'report_type': report_type,
         'period': period,
         'data': data,
-        'subscriptions': subscriptions,
-        'bookings': bookings,
-        'trainer_performance': trainer_performance,
         'total_revenue': total_revenue,
         'period_revenue': period_revenue,
+        # Chart data
+        'subs_status_labels': subs_status_labels,
+        'subs_status_counts': subs_status_counts,
+        'plans_labels': plans_labels,
+        'plans_counts': plans_counts,
+        'booking_status_labels': booking_status_labels,
+        'booking_status_counts': booking_status_counts,
+        'monthly_booking_labels': monthly_booking_labels,
+        'monthly_booking_counts': monthly_booking_counts,
+        'trainer_names': trainer_names,
+        'trainer_booking_counts': trainer_booking_counts,
+        'trainer_ratings': trainer_ratings,
     })

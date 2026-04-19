@@ -2,15 +2,17 @@ import requests
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
+from django.db import models
 from django.conf import settings as django_settings
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+from client_portal import models
 from client_portal.decorators import member_required
 from client_portal.forms import CustomPasswordChangeForm, ProfileUpdateForm
-from gym.models import Booking, MembershipPlan, Notification, Schedule, Trainer, Subscription, Payment
+from gym.models import Booking, Feedback, MembershipPlan, Notification, Schedule, Trainer, Subscription, Payment
 from client_portal.notifications import (
     notify_membership_purchased,
     notify_membership_hold,
@@ -21,10 +23,7 @@ from client_portal.notifications import (
 )
 
 
-# ═════════════════════════════════════════════════════
-# HELPER
-# ═════════════════════════════════════════════════════
-
+# HELPER FUNCTIONS
 # a) Calculate booking price based on duration
 # Session price is per week, so multiply accordingly
 def get_booking_price(session_price, duration):
@@ -56,10 +55,9 @@ def calculate_end_date(start, duration):
         return start + relativedelta(months=1)
 
 
-# ═════════════════════════════════════════════════════
+
 # 1) CLIENT DASHBOARD
 # Public page — shows plans and trainers overview
-# ═════════════════════════════════════════════════════
 def client_dashboard(request):
     try:
         plans = MembershipPlan.objects.all().order_by('price')
@@ -75,10 +73,8 @@ def client_dashboard(request):
     })
 
 
-# ═════════════════════════════════════════════════════
-# 2) PROFILE MANAGEMENT
-# ═════════════════════════════════════════════════════
 
+# 2) PROFILE MANAGEMENT
 # a) VIEW PROFILE + CHANGE PASSWORD
 # Handles both viewing profile info and password update form
 @member_required
@@ -130,10 +126,8 @@ def update_profile(request):
     })
 
 
-# ═════════════════════════════════════════════════════
-# 3) MEMBERSHIP MANAGEMENT
-# ═════════════════════════════════════════════════════
 
+# 3) MEMBERSHIP MANAGEMENT
 # a) MEMBERSHIP LIST
 # Public — shows all plans, highlights active subscription if any
 def membership_list(request):
@@ -579,10 +573,8 @@ def cancel_membership(request):
     })
 
 
-# ═════════════════════════════════════════════════════
-# 4) TRAINER & BOOKING
-# ═════════════════════════════════════════════════════
 
+# 4) TRAINER & BOOKING
 # a) TRAINER LIST
 # Public — shows all trainers with their shifts
 def trainer_list(request):
@@ -991,10 +983,8 @@ def cancel_booking(request, pk):
 
 
 
-# ═════════════════════════════════════════════════════
-# 5) NOTIFICATIONS 
-# ═════════════════════════════════════════════════════
 
+# 5) NOTIFICATIONS 
 # a) NOTIFICATIONS LIST 
 """
 Shows all notifications for the logged-in client.
@@ -1013,6 +1003,18 @@ def notifications_list(request):
     except Exception:
         notifications = []
         messages.error(request, "Failed to load notifications.")
+
+    # Paginate — 5 per page
+    paginator = Paginator(notifications, 5)
+    page = request.GET.get('page', 1)
+    try:
+        notifications_page = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        notifications_page = paginator.page(1)
+
+    return render(request, 'client_portal/notifications/notifications_list.html', {
+        'notifications': notifications_page,
+    })
 
     return render(request, 'client_portal/notifications/notifications_list.html', {
         'notifications': notifications,
@@ -1094,3 +1096,92 @@ def contact_us(request):
             messages.error(request, "Failed to send message. Please try again.")
 
     return render(request, 'client_portal/contact.html')
+
+
+# 7) TRAINER REVIEWS
+# a) REVIEW TRAINER 
+@member_required
+def review_trainer(request, booking_pk):
+    """
+    Client can review a trainer only after booking is Completed.
+    One review per completed booking.
+    """
+    try:
+        # Booking must belong to this user and be Completed
+        booking = get_object_or_404(
+            Booking,
+            pk=booking_pk,
+            user=request.user,
+            booking_status='Completed'
+        )
+    except Exception:
+        messages.error(request, "You can only review a trainer after completing a session.")
+        return redirect('my_bookings')
+
+    # Check if already reviewed this booking
+    if hasattr(booking, 'feedback') and booking.feedback:
+        messages.error(request, "You have already reviewed this booking.")
+        return redirect('my_bookings')
+
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment', '').strip()
+
+        # Validate rating
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except (ValueError, TypeError):
+            messages.error(request, "Please select a valid rating (1-5).")
+            return render(request, 'client_portal/trainers/review_trainer.html', {
+                'booking': booking,
+            })
+
+        try:
+            Feedback.objects.create(
+                user=request.user,
+                trainer=booking.schedule.trainer,
+                booking=booking,
+                rating=rating,
+                comment=comment,
+            )
+            messages.success(
+                request,
+                f"Thank you for reviewing {booking.schedule.trainer.user.get_full_name()}!"
+            )
+            return redirect('my_bookings')
+        except Exception as e:
+            messages.error(request, "Failed to submit review. Please try again.")
+
+    return render(request, 'client_portal/trainers/review_trainer.html', {
+        'booking': booking,
+    })
+
+
+# b) TRAINER REVIEWS (public)
+def trainer_reviews(request, trainer_pk):
+    """
+    Shows all reviews for a specific trainer.
+    """
+    try:
+        trainer = get_object_or_404(Trainer, pk=trainer_pk)
+        feedbacks = Feedback.objects.select_related('user').filter(
+            trainer=trainer
+        ).order_by('-date_given')
+
+        # Calculate average rating
+        avg_rating = feedbacks.aggregate(
+            avg=models.Avg('rating')
+        )['avg'] or 0
+        avg_rating = round(avg_rating, 1)
+
+    except Exception:
+        messages.error(request, "Failed to load reviews.")
+        return redirect('trainer_list')
+
+    return render(request, 'client_portal/trainers/trainer_reviews.html', {
+        'trainer': trainer,
+        'feedbacks': feedbacks,
+        'avg_rating': avg_rating,
+    })

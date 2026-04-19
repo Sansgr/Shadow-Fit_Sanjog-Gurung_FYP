@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Trainer Portal{% endblock %} | Shadow Fit</title>
+    <link rel="stylesheet" href="{% static 'css/trainer_styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ─── NAVBAR ───────────────────────────────── -->
+    <nav class="trainer-navbar">
+        <div class="trainer-navbar-inner">
+            <!-- Brand -->
+            <a href="{% url 'trainer_dashboard' %}" class="trainer-brand">
+                <span class="brand-shadow">Shadow</span><span class="brand-fit">Fit</span>
+                <span class="brand-label">Trainer</span>
+            </a>
+
+            <!-- Nav Links -->
+            <div class="trainer-nav-links">
+                <a href="{% url 'trainer_dashboard' %}"
+                    class="{% if request.resolver_match.url_name == 'trainer_dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+                <a href="{% url 'trainer_bookings' %}"
+                    class="{% if 'booking' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-journal-check"></i> Bookings
+                </a>
+                <a href="{% url 'trainer_schedule' %}"
+                    class="{% if request.resolver_match.url_name == 'trainer_schedule' %}active{% endif %}">
+                    <i class="bi bi-calendar3"></i> My Schedule
+                </a>
+                <a href="{% url 'trainer_reviews' %}"
+                    class="{% if request.resolver_match.url_name == 'trainer_reviews' %}active{% endif %}">
+                    <i class="bi bi-star"></i> Reviews
+                </a>
+            </div>
+
+            <!-- Right — Profile & Logout -->
+            <div class="trainer-nav-right">
+                <span class="trainer-welcome">
+                    {% if request.user.photo %}
+                        <img src="{{ request.user.photo.url }}"
+                            style="width:30px; height:30px; border-radius:50%;
+                                object-fit:cover; border:2px solid #fff; margin-right:8px;">
+                    {% else %}
+                        <i class="bi bi-person-circle me-2"></i>
+                    {% endif %}
+                    {{ request.user.get_full_name }}
+                </span>
+                <a href="{% url 'logout' %}" class="trainer-logout-btn">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ─── MESSAGES ─────────────────────────────── -->
+    {% if messages %}
+    <div class="trainer-messages">
+        {% for message in messages %}
+        <div class="trainer-alert trainer-alert-{{ message.tags }}">
+            <i class="bi bi-info-circle me-2"></i>{{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ─── MAIN CONTENT ─────────────────────────── -->
+    <main class="trainer-main">
+        <div class="trainer-container">
+            <!-- Page Header -->
+            <div class="trainer-page-header">
+                <h4 class="trainer-page-title">
+                    {% block page_title %}Dashboard{% endblock %}
+                </h4>
+            </div>
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- ─── FOOTER ───────────────────────────────── -->
+    <footer class="trainer-footer">
+        <span>&copy; 2025 <strong>Shadow Fit</strong> — Trainer Portal</span>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Auto-dismiss messages after 3 seconds
+        setTimeout(function() {
+            const msgs = document.querySelector('.trainer-messages');
+            if (msgs) {
+                msgs.style.transition = 'opacity 0.5s';
+                msgs.style.opacity = '0';
+                setTimeout(() => msgs.remove(), 500);
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

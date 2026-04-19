@@ -32,6 +32,13 @@
 
             <p class="trainer-detail-bio">{{ trainer.bio }}</p>
 
+            <div class="mt-4">
+                <a href="{% url 'trainer_reviews' trainer.pk %}" class="back-link">
+                    <i class="bi bi-star"></i>
+                    View Reviews ({{ trainer.feedbacks.count }})
+                </a>
+            </div><br>
+
             <!-- Available Shifts -->
             <div class="trainer-shifts-section">
                 <h5>Available Shifts <small class="text-muted">(Sunday — Friday)</small></h5>
@@ -62,7 +69,6 @@
                     {% endfor %}
                 </div>
             </div>
-
         </div>
     </div>
 

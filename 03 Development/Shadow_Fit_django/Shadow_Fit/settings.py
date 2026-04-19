@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'admin_panel',
     'gym',
     'client_portal',
+    'trainer_portal', 
 ]
 
 MIDDLEWARE = [
@@ -183,3 +184,9 @@ LOGGING = {
         },
     },
 }
+
+# ─── SESSION CONFIGURATION ────────────────────────────
+# This is the GLOBAL default. Per-user override is in login_view.
+SESSION_COOKIE_AGE = 120           # 2 minutes in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = True  # resets timer on every request (activity-based)

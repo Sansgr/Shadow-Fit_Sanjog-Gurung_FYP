@@ -50,6 +50,30 @@
             </div>
             {% endfor %}
 
+            <!-- Pagination -->
+            {% if notifications.has_other_pages %}
+            <div class="pagination-bar mt-4">
+                {% if notifications.has_previous %}
+                    <a href="?page={{ notifications.previous_page_number }}"
+                        class="page-btn">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                {% endif %}
+                {% for num in notifications.paginator.page_range %}
+                    <a href="?page={{ num }}"
+                        class="page-btn {% if notifications.number == num %}active{% endif %}">
+                        {{ num }}
+                    </a>
+                {% endfor %}
+                {% if notifications.has_next %}
+                    <a href="?page={{ notifications.next_page_number }}"
+                        class="page-btn">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
         {% else %}
             <div class="no-membership-card">
                 <i class="bi bi-bell-slash" style="color: var(--text-muted);"></i>

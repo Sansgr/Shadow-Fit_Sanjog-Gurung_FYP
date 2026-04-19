@@ -13,6 +13,15 @@ def dashboard(request):
 
 # Register
 def register_view(request):
+    # Redirect if already logged in
+    if request.user.is_authenticated:
+        if request.user.role == 'Admin':
+            return redirect('admin_dashboard')
+        elif request.user.role == 'Trainer':
+            return redirect('dashboard')
+        else:
+            return redirect('client_dashboard')
+
     if request.method == 'POST':
         form = RegisterForm(request.POST, request.FILES)
         if form.is_valid():
@@ -32,6 +41,15 @@ def register_view(request):
 
 # Login
 def login_view(request):
+    # Redirect if already logged in
+    if request.user.is_authenticated:
+        if request.user.role == 'Admin':
+            return redirect('admin_dashboard')
+        elif request.user.role == 'Trainer':
+            return redirect('dashboard')
+        else:
+            return redirect('client_dashboard')
+        
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
@@ -40,15 +58,15 @@ def login_view(request):
 
             # Handle Remember Me — session expires on browser close if unchecked
             if not form.cleaned_data.get('remember_me'):
-                request.session.set_expiry(0)  # expires when browser closes
+                request.session.set_expiry(120)  # 2 minutes for clients
             else:
-                request.session.set_expiry(1209600)  # 2 weeks
+                request.session.set_expiry(1209600)  # 2 weeks if Remember Me checked
 
             messages.success(request, "Login successful!")
             if user.role == 'Admin':
                 return redirect('admin_dashboard')
             elif user.role == 'Trainer':
-                return redirect('dashboard')
+                return redirect('trainer_dashboard')
             else:
                 return redirect('client_dashboard')
         else:

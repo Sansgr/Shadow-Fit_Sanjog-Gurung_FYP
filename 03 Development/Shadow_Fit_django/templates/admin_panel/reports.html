@@ -5,24 +5,40 @@
 
 {% block content %}
 
-<!-- ─── Report Filter Bar ──────────────────── -->
+<!-- Hidden JSON for charts -->
+{{ subs_status_labels|json_script:"subs-status-labels" }}
+{{ subs_status_counts|json_script:"subs-status-counts" }}
+{{ plans_labels|json_script:"plans-labels" }}
+{{ plans_counts|json_script:"plans-counts" }}
+{{ booking_status_labels|json_script:"booking-status-labels" }}
+{{ booking_status_counts|json_script:"booking-status-counts" }}
+{{ monthly_booking_labels|json_script:"monthly-booking-labels" }}
+{{ monthly_booking_counts|json_script:"monthly-booking-counts" }}
+{{ trainer_names|json_script:"trainer-names" }}
+{{ trainer_booking_counts|json_script:"trainer-booking-counts" }}
+{{ trainer_ratings|json_script:"trainer-ratings" }}
+
+<!-- ─── Filter Bar ──────────────────────── -->
 <form method="GET" class="d-flex gap-3 mb-4 align-items-center flex-wrap">
-    <div>
-        <label style="font-size:13px; font-weight:500; margin-right:8px;">Report Type:</label>
+    <div class="d-flex align-items-center gap-2">
+        <label style="font-size:13px; font-weight:500;">Report Type:</label>
         <select name="type" class="admin-select" onchange="this.form.submit()">
-            <option value="membership" {% if report_type == 'membership' %}selected{% endif %}>
-                Membership Report
+            <option value="membership"
+                {% if report_type == 'membership' %}selected{% endif %}>
+                Membership
             </option>
-            <option value="booking" {% if report_type == 'booking' %}selected{% endif %}>
-                Booking Report
+            <option value="booking"
+                {% if report_type == 'booking' %}selected{% endif %}>
+                Booking
             </option>
-            <option value="trainer" {% if report_type == 'trainer' %}selected{% endif %}>
+            <option value="trainer"
+                {% if report_type == 'trainer' %}selected{% endif %}>
                 Trainer Performance
             </option>
         </select>
     </div>
-    <div>
-        <label style="font-size:13px; font-weight:500; margin-right:8px;">Period:</label>
+    <div class="d-flex align-items-center gap-2">
+        <label style="font-size:13px; font-weight:500;">Period:</label>
         <select name="period" class="admin-select" onchange="this.form.submit()">
             <option value="all" {% if period == 'all' %}selected{% endif %}>All Time</option>
             <option value="week" {% if period == 'week' %}selected{% endif %}>Last Week</option>
@@ -32,14 +48,83 @@
             </option>
         </select>
     </div>
-    <div class="ms-auto" style="font-size:14px; color:#666;">
-        Revenue (period): <strong style="color: var(--green);">Rs. {{ period_revenue }}</strong>
+    <div class="ms-auto" style="font-size:14px;">
+        Period Revenue:
+        <strong style="color:var(--green);">Rs. {{ period_revenue }}</strong>
         &nbsp;|&nbsp;
         Total Revenue: <strong>Rs. {{ total_revenue }}</strong>
     </div>
 </form>
 
-<!-- ─── Membership Report ──────────────────── -->
+<!-- ─── Charts (conditional by report type) ─── -->
+{% if report_type == 'membership' %}
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">
+                <i class="bi bi-pie-chart-fill me-2" style="color:var(--green);"></i>
+                Subscription Status
+            </h6>
+            <canvas id="subsStatusChart" height="200"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">
+                <i class="bi bi-bar-chart-fill me-2" style="color:var(--green);"></i>
+                Plans Popularity
+            </h6>
+            <canvas id="plansChart" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+{% elif report_type == 'booking' %}
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">
+                <i class="bi bi-pie-chart me-2" style="color:var(--green);"></i>
+                Booking Status
+            </h6>
+            <canvas id="bookingStatusChart" height="220"></canvas>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">
+                <i class="bi bi-graph-up me-2" style="color:var(--green);"></i>
+                Monthly Bookings Trend
+            </h6>
+            <canvas id="monthlyBookingsChart" height="120"></canvas>
+        </div>
+    </div>
+</div>
+
+{% elif report_type == 'trainer' %}
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">
+                <i class="bi bi-bar-chart-fill me-2" style="color:var(--green);"></i>
+                Total Bookings per Trainer
+            </h6>
+            <canvas id="trainerBookingsChart" height="200"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">
+                <i class="bi bi-star-fill me-2" style="color:#f39c12;"></i>
+                Average Rating per Trainer
+            </h6>
+            <canvas id="trainerRatingsChart" height="200"></canvas>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ─── Data Table ─────────────────────────── -->
 {% if report_type == 'membership' %}
 <div class="admin-table">
     <table>
@@ -84,7 +169,6 @@
     </table>
 </div>
 
-<!-- ─── Booking Report ────────────────────── -->
 {% elif report_type == 'booking' %}
 <div class="admin-table">
     <table>
@@ -131,7 +215,6 @@
     </table>
 </div>
 
-<!-- ─── Trainer Performance ───────────────── -->
 {% elif report_type == 'trainer' %}
 <div class="admin-table">
     <table>
@@ -143,6 +226,7 @@
                 <th>Experience</th>
                 <th>Total Bookings</th>
                 <th>Confirmed</th>
+                <th>Avg Rating</th>
                 <th>Session Price</th>
             </tr>
         </thead>
@@ -155,11 +239,18 @@
                 <td>{{ trainer.experience }} yrs</td>
                 <td>{{ trainer.total_bookings }}</td>
                 <td>{{ trainer.confirmed_bookings }}</td>
+                <td>
+                    {% if trainer.avg_rating %}
+                        {{ trainer.avg_rating|floatformat:1 }} ★
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
                 <td>Rs. {{ trainer.session_price }}/week</td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" style="text-align:center; padding:30px; color:#999;">
+                <td colspan="8" style="text-align:center; padding:30px; color:#999;">
                     No trainer data found.
                 </td>
             </tr>
@@ -169,6 +260,194 @@
 </div>
 {% endif %}
 
-<!-- Pagination -->
-{% include "admin_panel/includes/pagination.html" with page_obj=Reports %}
+{% include "admin_panel/includes/pagination.html" with page_obj=data %}
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // ✅ Parse JSON safely using json_script
+    const subsStatusLabels = JSON.parse(
+        document.getElementById('subs-status-labels').textContent
+    );
+    const subsStatusCounts = JSON.parse(
+        document.getElementById('subs-status-counts').textContent
+    );
+    const plansLabels = JSON.parse(
+        document.getElementById('plans-labels').textContent
+    );
+    const plansCounts = JSON.parse(
+        document.getElementById('plans-counts').textContent
+    );
+    const bookingStatusLabels = JSON.parse(
+        document.getElementById('booking-status-labels').textContent
+    );
+    const bookingStatusCounts = JSON.parse(
+        document.getElementById('booking-status-counts').textContent
+    );
+    const monthlyBookingLabels = JSON.parse(
+        document.getElementById('monthly-booking-labels').textContent
+    );
+    const monthlyBookingCounts = JSON.parse(
+        document.getElementById('monthly-booking-counts').textContent
+    );
+    const trainerNames = JSON.parse(
+        document.getElementById('trainer-names').textContent
+    );
+    const trainerBookingCounts = JSON.parse(
+        document.getElementById('trainer-booking-counts').textContent
+    );
+    const trainerRatings = JSON.parse(
+        document.getElementById('trainer-ratings').textContent
+    );
+
+    // ─── Membership Charts ──────────────────────────
+    if (document.getElementById('subsStatusChart')) {
+        new Chart(document.getElementById('subsStatusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: subsStatusLabels,
+                datasets: [{
+                    data: subsStatusCounts,
+                    backgroundColor: ['#20c05c', '#f39c12', '#e74c3c', '#3498db'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    if (document.getElementById('plansChart')) {
+        new Chart(document.getElementById('plansChart'), {
+            type: 'bar',
+            data: {
+                labels: plansLabels,
+                datasets: [{
+                    label: 'Subscriptions',
+                    data: plansCounts,
+                    backgroundColor: 'rgba(32,192,92,0.75)',
+                    borderColor: '#20c05c',
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // ─── Booking Charts ─────────────────────────────
+    if (document.getElementById('bookingStatusChart')) {
+        new Chart(document.getElementById('bookingStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: bookingStatusLabels,
+                datasets: [{
+                    data: bookingStatusCounts,
+                    backgroundColor: ['#f39c12', '#20c05c', '#e74c3c', '#3498db'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    if (document.getElementById('monthlyBookingsChart')) {
+        new Chart(document.getElementById('monthlyBookingsChart'), {
+            type: 'line',
+            data: {
+                labels: monthlyBookingLabels,
+                datasets: [{
+                    label: 'Bookings',
+                    data: monthlyBookingCounts,
+                    borderColor: '#20c05c',
+                    backgroundColor: 'rgba(32,192,92,0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#20c05c',
+                    pointRadius: 5,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // ─── Trainer Charts ─────────────────────────────
+    if (document.getElementById('trainerBookingsChart')) {
+        new Chart(document.getElementById('trainerBookingsChart'), {
+            type: 'bar',
+            data: {
+                labels: trainerNames,
+                datasets: [{
+                    label: 'Total Bookings',
+                    data: trainerBookingCounts,
+                    backgroundColor: 'rgba(13,27,42,0.8)',
+                    borderColor: '#0d1b2a',
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                indexAxis: 'y',  // horizontal bar
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    if (document.getElementById('trainerRatingsChart')) {
+        new Chart(document.getElementById('trainerRatingsChart'), {
+            type: 'bar',
+            data: {
+                labels: trainerNames,
+                datasets: [{
+                    label: 'Avg Rating',
+                    data: trainerRatings,
+                    backgroundColor: 'rgba(243,156,18,0.75)',
+                    borderColor: '#f39c12',
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 5,
+                        grid: { color: '#f0f0f0' }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+</script>
+
 {% endblock %}

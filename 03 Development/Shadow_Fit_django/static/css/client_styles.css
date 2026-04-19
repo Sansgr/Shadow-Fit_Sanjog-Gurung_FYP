@@ -1894,3 +1894,38 @@ body {
     border-color: var(--green);
     outline: none;
 }
+
+/* ─── STAR RATING ────────────────────────────────── */
+.star-rating-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.star-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.star-label input[type="radio"] {
+    display: none;
+}
+
+.star-icon {
+    font-size: 28px;
+    color: #ddd;
+    transition: 0.2s;
+}
+
+.star-label:hover .star-icon,
+.star-label input:checked ~ .star-icon {
+    color: #f39c12;
+}
+
+.star-label span {
+    font-size: 11px;
+    color: var(--text-muted);
+}

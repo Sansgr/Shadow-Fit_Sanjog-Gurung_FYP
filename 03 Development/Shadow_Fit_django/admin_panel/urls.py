@@ -41,6 +41,10 @@ urlpatterns = [
     path('subscriptions/<int:pk>/update/', views.subscription_update, name='subscription_update'),
     path('subscriptions/<int:pk>/delete/', views.subscription_delete, name='subscription_delete'),
 
+    # Feedback URLs
+    path('feedback/', views.feedback_list, name='feedback_list'),
+    path('feedback/<int:pk>/delete/', views.feedback_delete, name='feedback_delete'),
+
     # Payment URLs
     path('payments/', views.payment_list, name='payment_list'),
     path('payments/<int:pk>/verify/', views.payment_verify, name='payment_verify'),

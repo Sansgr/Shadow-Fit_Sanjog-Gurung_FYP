@@ -1,0 +1,65 @@
+{% extends "client_portal/base_client.html" %}
+{% block title %}Reviews | Shadow Fit{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="my-membership-container" style="max-width:800px;">
+
+        <div class="d-flex align-items-center gap-3 mb-4">
+            {% if trainer.user.photo %}
+                <img src="{{ trainer.user.photo.url }}"
+                    style="width:60px; height:60px; border-radius:50%; object-fit:cover;">
+            {% endif %}
+            <div>
+                <h3 class="mb-0">{{ trainer.user.get_full_name }}</h3>
+                <span class="trainer-specialty">{{ trainer.specialty }}</span>
+            </div>
+            <div class="ms-auto text-center">
+                <div style="font-size:32px; font-weight:700; color:var(--green);">
+                    {{ avg_rating }}
+                </div>
+                <div style="font-size:12px; color:var(--text-muted);">
+                    avg rating ({{ feedbacks.count }} reviews)
+                </div>
+            </div>
+        </div>
+
+        {% for feedback in feedbacks %}
+        <div class="booking-detail-card mb-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <strong>{{ feedback.user.get_full_name }}</strong>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0;">
+                        {{ feedback.date_given|date:"M d, Y" }}
+                    </p>
+                </div>
+                <div>
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= feedback.rating %}
+                            <i class="bi bi-star-fill" style="color:#f39c12;"></i>
+                        {% else %}
+                            <i class="bi bi-star" style="color:#ddd;"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% if feedback.comment %}
+                <p style="font-size:14px; color:var(--text-muted); margin:0;">
+                    {{ feedback.comment }}
+                </p>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="no-membership-card">
+            <i class="bi bi-star" style="color:var(--text-muted);"></i>
+            <h5>No Reviews Yet</h5>
+            <p>Be the first to review this trainer!</p>
+        </div>
+        {% endfor %}
+
+        <a href="{% url 'trainer_detail' trainer.pk %}" class="back-link mt-3">
+            <i class="bi bi-arrow-left"></i> Back to Trainer
+        </a>
+    </div>
+</div>
+{% endblock %}

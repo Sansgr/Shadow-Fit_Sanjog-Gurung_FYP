@@ -1,0 +1,74 @@
+{% extends "client_portal/base_client.html" %}
+{% block title %}Review Trainer | Shadow Fit{% endblock %}
+
+{% block content %}
+<div class="checkout-page" style="max-width:600px;">
+    <div class="checkout-plan-card">
+
+        <h4 class="mb-4">
+            <i class="bi bi-star-fill text-green me-2"></i>
+            Review {{ booking.schedule.trainer.user.get_full_name }}
+        </h4>
+
+        <!-- Trainer info -->
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:24px;
+            padding:16px; background:var(--bg); border-radius:10px;">
+            {% if booking.schedule.trainer.user.photo %}
+                <img src="{{ booking.schedule.trainer.user.photo.url }}"
+                    style="width:52px; height:52px; border-radius:50%; object-fit:cover;">
+            {% else %}
+                <i class="bi bi-person-circle" style="font-size:48px; color:#ccc;"></i>
+            {% endif %}
+            <div>
+                <strong>{{ booking.schedule.trainer.user.get_full_name }}</strong>
+                <p style="margin:0; font-size:13px; color:var(--text-muted);">
+                    {{ booking.schedule.trainer.specialty }}
+                </p>
+                <p style="margin:0; font-size:12px; color:var(--text-muted);">
+                    Booking: {{ booking.duration }} —
+                    {{ booking.start_date|date:"M d, Y" }}
+                </p>
+            </div>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <!-- Star Rating -->
+            <label style="font-size:14px; font-weight:500; margin-bottom:10px; display:block;">
+                Your Rating
+            </label>
+            <div class="star-rating-group mb-4">
+                {% for i in "12345" %}
+                <label class="star-label">
+                    <input type="radio" name="rating" value="{{ i }}" required>
+                    <i class="bi bi-star-fill star-icon"></i>
+                    <span>{{ i }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <!-- Comment -->
+            <label style="font-size:14px; font-weight:500; margin-bottom:6px; display:block;">
+                Your Comment
+                <span style="color:#999; font-size:12px;">(Optional)</span>
+            </label>
+            <textarea name="comment" rows="4"
+                placeholder="Share your experience with this trainer..."
+                style="width:100%; padding:10px 14px; border:1px solid #dde1e7;
+                    border-radius:8px; font-size:14px; resize:vertical; margin-bottom:20px;"
+            ></textarea>
+
+            <div class="d-flex gap-3">
+                <button type="submit" class="client-btn-green">
+                    <i class="bi bi-send"></i> Submit Review
+                </button>
+                <a href="{% url 'my_bookings' %}" class="client-btn-outline"
+                    style="color:var(--black); border-color:#ccc;">
+                    <i class="bi bi-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "trainer_portal/base_trainer.html" %}
+{% block title %}My Schedule{% endblock %}
+{% block page_title %}My Schedule{% endblock %}
+
+{% block content %}
+
+<div class="trainer-card">
+    <div class="trainer-card-header">
+        <h6>
+            <i class="bi bi-calendar3 me-2"></i>My Shifts
+        </h6>
+        <span class="text-muted" style="font-size:13px;">
+            Available: Sunday — Friday
+        </span>
+    </div>
+
+    {% if schedules %}
+    <div class="schedule-grid">
+        {% for schedule in schedules %}
+        <div class="schedule-item">
+            <div class="schedule-shift-badge shift-{{ schedule.shift_name|lower }}">
+                {% if schedule.shift_name == 'Morning' %}
+                    <i class="bi bi-sunrise-fill"></i>
+                {% elif schedule.shift_name == 'Day' %}
+                    <i class="bi bi-sun-fill"></i>
+                {% elif schedule.shift_name == 'Evening' %}
+                    <i class="bi bi-sunset-fill"></i>
+                {% endif %}
+                {{ schedule.shift_name }}
+            </div>
+            <div class="schedule-time">
+                <i class="bi bi-clock"></i>
+                {{ schedule.start_time|time:"h:i A" }} — {{ schedule.end_time|time:"h:i A" }}
+            </div>
+            <div class="schedule-days">
+                <i class="bi bi-calendar-week"></i>
+                Sunday — Friday
+            </div>
+            <div class="schedule-booking-count text-muted" style="font-size:13px; margin-top:8px;">
+                <i class="bi bi-people"></i>
+                {{ schedule.bookings.count }} booking(s)
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="trainer-empty">
+        <i class="bi bi-calendar-x"></i>
+        <p>No schedules assigned yet. Contact admin to add your shifts.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

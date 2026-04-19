@@ -23,6 +23,7 @@ urlpatterns = [
     # Trainers & Booking
     path('trainers/', views.trainer_list, name='trainer_list'),
     path('trainers/<int:pk>/', views.trainer_detail, name='trainer_detail'),
+    path('trainers/<int:trainer_pk>/reviews/', views.trainer_reviews, name='trainer_reviews'),
     path('trainers/booking/<int:schedule_pk>/checkout/', views.booking_checkout, name='booking_checkout'),
     path('trainers/booking/<int:schedule_pk>/cash/', views.booking_cash_payment, name='booking_cash_payment'),
     path('trainers/booking/<int:schedule_pk>/khalti/', views.booking_khalti_initiate, name='booking_khalti_initiate'),
@@ -30,6 +31,7 @@ urlpatterns = [
     path('trainers/booking/<int:schedule_pk>/khalti-verify', views.booking_khalti_verify, name='booking_khalti_verify_noslash'),
     path('bookings/', views.my_bookings, name='my_bookings'),
     path('bookings/<int:pk>/cancel/', views.cancel_booking, name='cancel_booking'),
+    path('bookings/<int:booking_pk>/review/', views.review_trainer, name='review_trainer'),
 
     # Notifications
     path('notifications/', views.notifications_list, name='notifications_list'), 

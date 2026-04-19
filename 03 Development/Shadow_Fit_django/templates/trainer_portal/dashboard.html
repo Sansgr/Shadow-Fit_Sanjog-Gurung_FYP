@@ -1,0 +1,127 @@
+{% extends "trainer_portal/base_trainer.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ─── Stat Cards ──────────────────────── -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="trainer-stat-card">
+            <div class="stat-icon" style="background:#f39c12;">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ pending_count }}</h3>
+                <p>Pending</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="trainer-stat-card">
+            <div class="stat-icon" style="background:#27ae60;">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ confirmed_count }}</h3>
+                <p>Confirmed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="trainer-stat-card">
+            <div class="stat-icon" style="background:#3498db;">
+                <i class="bi bi-trophy"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ completed_count }}</h3>
+                <p>Completed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="trainer-stat-card">
+            <div class="stat-icon" style="background:#e74c3c;">
+                <i class="bi bi-x-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ cancelled_count }}</h3>
+                <p>Cancelled</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Pending Bookings ──────────────── -->
+<div class="trainer-card">
+    <div class="trainer-card-header">
+        <h6>
+            <i class="bi bi-clock-history me-2"></i>
+            Pending Bookings
+            {% if pending_count > 0 %}
+                <span class="trainer-badge">{{ pending_count }}</span>
+            {% endif %}
+        </h6>
+        <a href="{% url 'trainer_bookings' %}" class="trainer-btn-outline" style="font-size:13px;">
+            View All
+        </a>
+    </div>
+
+    {% if recent_pending %}
+    <div class="trainer-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Shift</th>
+                    <th>Duration</th>
+                    <th>Start Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in recent_pending %}
+                <tr>
+                    <td>
+                        <strong>{{ booking.user.get_full_name }}</strong>
+                        <small class="d-block text-muted">
+                            @{{ booking.user.username }}
+                        </small>
+                    </td>
+                    <td>
+                        <span class="shift-pill shift-{{ booking.schedule.shift_name|lower }}">
+                            {{ booking.schedule.shift_name }}
+                        </span>
+                        <small class="d-block text-muted">
+                            {{ booking.schedule.start_time|time:"h:i A" }} —
+                            {{ booking.schedule.end_time|time:"h:i A" }}
+                        </small>
+                    </td>
+                    <td>{{ booking.duration }}</td>
+                    <td>{{ booking.start_date|date:"M d, Y" }}</td>
+                    <td style="white-space:nowrap;">
+                        <a href="{% url 'accept_booking' booking.pk %}"
+                            class="trainer-btn-success"
+                            style="padding:5px 12px; font-size:13px;">
+                            <i class="bi bi-check-lg"></i> Accept
+                        </a>
+                        <a href="{% url 'reject_booking' booking.pk %}"
+                            class="trainer-btn-danger"
+                            style="padding:5px 12px; font-size:13px; margin-left:5px;">
+                            <i class="bi bi-x-lg"></i> Reject
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="trainer-empty">
+        <i class="bi bi-check-all"></i>
+        <p>No pending bookings. You're all caught up!</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
