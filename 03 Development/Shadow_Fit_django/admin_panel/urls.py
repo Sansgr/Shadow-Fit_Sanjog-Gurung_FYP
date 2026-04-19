@@ -44,4 +44,7 @@ urlpatterns = [
     # Payment URLs
     path('payments/', views.payment_list, name='payment_list'),
     path('payments/<int:pk>/verify/', views.payment_verify, name='payment_verify'),
+
+    # Reports URL
+    path('reports/', views.reports, name='reports'),
 ]

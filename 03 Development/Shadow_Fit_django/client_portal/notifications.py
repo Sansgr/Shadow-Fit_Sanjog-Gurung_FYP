@@ -1,19 +1,25 @@
-from django.core.mail import send_mail
+import ssl
+import smtplib
+import logging
+import traceback
+
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
+
 from gym.models import Notification
 
-# Get CustomUser model
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-# ─────────────────────────────────────────────────────
-# HELPER: Create in-app notification for a user
-# ─────────────────────────────────────────────────────
+# 1) Helper functions for notifications and emails related to memberships, bookings, and account creation.
+# a) HELPER: Create in-app notification
 def create_notification(user, notification_type, title, message):
     """
     Creates an in-app notification record in the database.
-    Called for every event — membership, booking, etc.
     """
     try:
         Notification.objects.create(
@@ -23,54 +29,85 @@ def create_notification(user, notification_type, title, message):
             message=message,
         )
     except Exception as e:
-        # Log error but don't crash the main flow
-        print(f"[Notification Error] Failed to create notification: {e}")
+        logger.error(f"[Notification Error] Failed to create notification for {user.username}: {e}")
 
 
-# ─────────────────────────────────────────────────────
-# HELPER: Send email to a single recipient
-# ─────────────────────────────────────────────────────
+# b) HELPER: Send email using smtplib directly
 def send_email(subject, message, recipient_email):
     """
-    Sends a plain text email to the given recipient.
-    Wrapped in try/except to prevent email errors from breaking the app.
+    Sends plain text email using smtplib directly.
+    SSL verification disabled for development due to corporate proxy/firewall
+    intercepting SSL on this network (common in Nepal ISPs/institutions).
+    NOTE: Re-enable SSL verification in production deployment.
     """
+    if not recipient_email or '@' not in recipient_email:
+        logger.warning(f"[Email Warning] Invalid or empty email: '{recipient_email}' — skipped.")
+        return
+
     try:
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[recipient_email],
-            fail_silently=False,
+        # Build email message
+        msg = MIMEMultipart()
+        msg['From'] = settings.DEFAULT_FROM_EMAIL
+        msg['To'] = recipient_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(message, 'plain'))
+
+        # Disable SSL verification — needed when behind corporate proxy/firewall
+        # that inserts self-signed certificates
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+
+        # Connect via smtplib directly
+        with smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT) as server:
+            server.ehlo()
+            server.starttls(context=context)
+            server.ehlo()
+            server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            server.sendmail(
+                settings.EMAIL_HOST_USER,
+                recipient_email,
+                msg.as_string()
+            )
+
+        logger.info(f"[Email Sent] '{subject}' → {recipient_email}")
+
+    except smtplib.SMTPAuthenticationError:
+        logger.error(
+            f"[Email Error] Gmail authentication failed for {settings.EMAIL_HOST_USER}. "
+            f"Check your App Password in the .env file."
         )
+    except smtplib.SMTPException as e:
+        logger.error(f"[Email Error] SMTP error sending to {recipient_email}: {e}")
+        logger.error(traceback.format_exc())
     except Exception as e:
-        # Log error but don't crash the main flow
-        print(f"[Email Error] Failed to send email to {recipient_email}: {e}")
+        logger.error(f"[Email Error] Unexpected error sending to {recipient_email}: {e}")
+        logger.error(traceback.format_exc())
 
 
-# ─────────────────────────────────────────────────────
-# HELPER: Get all admin users to notify
-# ─────────────────────────────────────────────────────
+# c) HELPER: Get all admin emails
 def get_admin_emails():
     """
-    Returns list of email addresses of all Admin role users.
+    Returns list of email addresses of all active Admin users.
     """
     try:
-        admins = User.objects.filter(role='Admin', is_active=True).exclude(email='')
-        return [admin.email for admin in admins]
+        admins = User.objects.filter(
+            role='Admin',
+            is_active=True
+        ).exclude(email='')
+        emails = [admin.email for admin in admins if admin.email]
+        logger.info(f"[Admin Emails] Found {len(emails)} admin(s): {emails}")
+        return emails
     except Exception as e:
-        print(f"[Email Error] Failed to fetch admin emails: {e}")
+        logger.error(f"[Email Error] Failed to fetch admin emails: {e}")
         return []
 
 
-# ═════════════════════════════════════════════════════
-# 1) MEMBERSHIP NOTIFICATIONS
-# ═════════════════════════════════════════════════════
-
-# a) Membership Purchased
+# 2) MEMBERSHIP NOTIFICATIONS
+# a) Membership Purchased, Hold, Unhold, Cancelled
 def notify_membership_purchased(user, plan, payment_method):
     """
-    Notifies client and admin when a membership is purchased.
+    Notifies client and admins when membership is purchased.
     """
     title = "Membership Purchased"
     client_message = (
@@ -80,7 +117,8 @@ def notify_membership_purchased(user, plan, payment_method):
         f"Price: Rs. {plan.price}\n"
         f"Payment Method: {payment_method}\n\n"
         f"{'Please visit the front desk to complete your cash payment.' if payment_method == 'Cash' else 'Your online payment has been confirmed.'}\n\n"
-        f"Thank you for joining Shadow Fit!"
+        f"Thank you for joining Shadow Fit!\n"
+        f"Shadow Fit Team"
     )
 
     # In-app notification for client
@@ -109,8 +147,7 @@ def notify_membership_purchased(user, plan, payment_method):
             recipient_email=admin_email,
         )
 
-
-# b) Membership Hold
+# b) Membership Hold, Unhold, Cancelled
 def notify_membership_hold(user, subscription):
     """
     Notifies client when membership is put on hold.
@@ -119,11 +156,10 @@ def notify_membership_hold(user, subscription):
     message = (
         f"Hi {user.get_full_name()},\n\n"
         f"Your '{subscription.plan.plan_name}' membership has been put on hold.\n"
-        f"Your remaining days will be preserved and counted from the date you resume.\n\n"
-        f"You can resume your membership anytime from My Membership page.\n\n"
+        f"Your remaining days will be preserved and counted from when you resume.\n\n"
+        f"You can resume anytime from My Membership page.\n\n"
         f"Shadow Fit Team"
     )
-
     create_notification(user, 'membership_hold', title, message)
     send_email(
         subject=f"Shadow Fit — {title}",
@@ -131,20 +167,19 @@ def notify_membership_hold(user, subscription):
         recipient_email=user.email,
     )
 
-
 # c) Membership Unhold
 def notify_membership_unhold(user, subscription, new_end_date):
     """
-    Notifies client when membership is resumed.
+    Notifies client when membership is resumed with new expiry date.
     """
     title = "Membership Resumed"
     message = (
         f"Hi {user.get_full_name()},\n\n"
         f"Your '{subscription.plan.plan_name}' membership has been resumed.\n"
         f"New Expiry Date: {new_end_date.strftime('%B %d, %Y')}\n\n"
-        f"Welcome back to Shadow Fit!"
+        f"Welcome back to Shadow Fit!\n"
+        f"Shadow Fit Team"
     )
-
     create_notification(user, 'membership_unhold', title, message)
     send_email(
         subject=f"Shadow Fit — {title}",
@@ -152,11 +187,10 @@ def notify_membership_unhold(user, subscription, new_end_date):
         recipient_email=user.email,
     )
 
-
 # d) Membership Cancelled
 def notify_membership_cancelled(user, subscription):
     """
-    Notifies client and admin when membership is cancelled.
+    Notifies client and admins when membership is cancelled.
     """
     title = "Membership Cancelled"
     client_message = (
@@ -165,7 +199,6 @@ def notify_membership_cancelled(user, subscription):
         f"We hope to see you back soon!\n\n"
         f"Shadow Fit Team"
     )
-
     create_notification(user, 'membership_cancelled', title, client_message)
     send_email(
         subject=f"Shadow Fit — {title}",
@@ -173,10 +206,10 @@ def notify_membership_cancelled(user, subscription):
         recipient_email=user.email,
     )
 
-    # Notify admins
     admin_message = (
         f"Membership Cancelled\n\n"
         f"Client: {user.get_full_name()} (@{user.username})\n"
+        f"Email: {user.email}\n"
         f"Plan: {subscription.plan.plan_name}\n"
     )
     for admin_email in get_admin_emails():
@@ -187,22 +220,21 @@ def notify_membership_cancelled(user, subscription):
         )
 
 
-# ═════════════════════════════════════════════════════
-# 2) BOOKING NOTIFICATIONS
-# ═════════════════════════════════════════════════════
-
-# a) Booking Created
+# 3) BOOKING NOTIFICATIONS
+# a) Booking Created (Pending Confirmation or Confirmed based on payment method)
 def notify_booking_created(user, booking):
     """
-    Notifies client and admin when a booking is created.
+    Notifies client and admins when a booking is created.
     """
     title = "Trainer Booked"
     trainer_name = booking.schedule.trainer.user.get_full_name()
-    payment_method = 'Online (Khalti)' if booking.booking_status == 'Confirmed' else 'Cash'
+    is_online = booking.booking_status == 'Confirmed'
+    payment_method = 'Online (Khalti)' if is_online else 'Cash'
 
     client_message = (
         f"Hi {user.get_full_name()},\n\n"
-        f"Your trainer booking has been {'confirmed' if booking.booking_status == 'Confirmed' else 'submitted'}.\n\n"
+        f"Your trainer booking has been "
+        f"{'confirmed' if is_online else 'submitted and is pending confirmation'}.\n\n"
         f"Trainer: {trainer_name}\n"
         f"Shift: {booking.schedule.shift_name} "
         f"({booking.schedule.start_time.strftime('%I:%M %p')} — "
@@ -211,7 +243,7 @@ def notify_booking_created(user, booking):
         f"Start Date: {booking.start_date.strftime('%B %d, %Y')}\n"
         f"End Date: {booking.end_date.strftime('%B %d, %Y')}\n"
         f"Payment Method: {payment_method}\n\n"
-        f"{'Please visit the front desk to complete your cash payment.' if payment_method == 'Cash' else ''}\n\n"
+        f"{'Please visit the front desk to complete your cash payment.' if not is_online else ''}\n\n"
         f"Shadow Fit Team"
     )
 
@@ -222,15 +254,16 @@ def notify_booking_created(user, booking):
         recipient_email=user.email,
     )
 
-    # Notify admins
     admin_message = (
         f"New Trainer Booking\n\n"
         f"Client: {user.get_full_name()} (@{user.username})\n"
+        f"Email: {user.email}\n"
         f"Trainer: {trainer_name}\n"
         f"Shift: {booking.schedule.shift_name}\n"
         f"Duration: {booking.duration}\n"
         f"Start: {booking.start_date.strftime('%B %d, %Y')}\n"
         f"Status: {booking.booking_status}\n"
+        f"Payment: {payment_method}\n"
     )
     for admin_email in get_admin_emails():
         send_email(
@@ -239,28 +272,23 @@ def notify_booking_created(user, booking):
             recipient_email=admin_email,
         )
 
-
-# b) Booking Status Changed
+# b) Booking Status Changed (Confirmed, Cancelled, Completed)
 def notify_booking_status_changed(user, booking, new_status):
     """
-    Notifies client when booking status changes
-    (Confirmed, Cancelled, Completed).
+    Notifies client when booking status changes.
+    Called for Confirmed, Cancelled, Completed.
     """
-    status_titles = {
-        'Confirmed': 'Booking Confirmed',
-        'Cancelled': 'Booking Cancelled',
-        'Completed': 'Booking Completed',
+    status_map = {
+        'Confirmed': ('Booking Confirmed', 'booking_confirmed'),
+        'Cancelled': ('Booking Cancelled', 'booking_cancelled'),
+        'Completed': ('Booking Completed', 'booking_completed'),
     }
-    status_types = {
-        'Confirmed': 'booking_confirmed',
-        'Cancelled': 'booking_cancelled',
-        'Completed': 'booking_completed',
-    }
+    title, notification_type = status_map.get(
+        new_status,
+        ('Booking Update', 'booking_created')
+    )
 
-    title = status_titles.get(new_status, 'Booking Update')
-    notification_type = status_types.get(new_status, 'booking_created')
     trainer_name = booking.schedule.trainer.user.get_full_name()
-
     message = (
         f"Hi {user.get_full_name()},\n\n"
         f"Your booking with {trainer_name} has been {new_status.lower()}.\n\n"
@@ -271,6 +299,31 @@ def notify_booking_status_changed(user, booking, new_status):
     )
 
     create_notification(user, notification_type, title, message)
+    send_email(
+        subject=f"Shadow Fit — {title}",
+        message=message,
+        recipient_email=user.email,
+    )
+
+
+# 4) ACCOUNT NOTIFICATIONS
+# Account Created by Admin (with default password)
+def notify_account_created(user, default_password):
+    """
+    Notifies client/trainer when admin creates their account.
+    Sends login credentials to their email.
+    """
+    title = "Your Shadow Fit Account is Ready"
+    message = (
+        f"Hi {user.get_full_name()},\n\n"
+        f"Your Shadow Fit account has been created by the admin.\n\n"
+        f"Username: {user.username}\n"
+        f"Password: {default_password}\n\n"
+        f"Please login and change your password immediately.\n"
+        f"Login at: http://127.0.0.1:8000/login/\n\n"
+        f"Shadow Fit Team"
+    )
+    create_notification(user, 'membership_purchased', title, message)
     send_email(
         subject=f"Shadow Fit — {title}",
         message=message,

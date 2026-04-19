@@ -482,3 +482,68 @@ body {
     background: #cce5ff;
     color: #004085;
 }
+
+/* ─── ADMIN PAGINATION ───────────────────────────── */
+.admin-pagination {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.page-link-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    text-decoration: none;
+    color: var(--text-dark);
+    background: var(--white);
+    border: 1px solid #dde1e7;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+}
+
+.page-link-btn:hover {
+    background: var(--navy);
+    color: var(--white);
+    border-color: var(--navy);
+}
+
+.page-link-btn.active {
+    background: var(--navy);
+    color: var(--white);
+    border-color: var(--navy);
+    font-weight: 600;
+}
+
+/* ─── ADMIN CHARTS ───────────────────────────────── */
+.admin-chart-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+
+.chart-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--bg);
+}
+
+/* ─── ADMIN SELECT ───────────────────────────────── */
+.admin-select {
+    padding: 8px 14px;
+    border: 1px solid #dde1e7;
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--white);
+    cursor: pointer;
+}
+
+.admin-select:focus {
+    border-color: var(--navy);
+    outline: none;
+}

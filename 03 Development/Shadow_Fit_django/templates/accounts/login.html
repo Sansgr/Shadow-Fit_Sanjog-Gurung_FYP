@@ -8,9 +8,10 @@
 <body>
     <div class="auth-page">
         <div class="auth-card">
-            <div class="logo">
-                <span class="shadow">Shadow</span> <span class="fit">Fit</span>
-            </div>
+            <a href="{% url 'client_dashboard' %}" class="logo" style="text-decoration:none;">
+                <span class="shadow">Shadow</span>
+                <span class="fit">Fit</span>
+            </a>
 
             <h2 class="auth-title">Login</h2>
             {% if messages %}
@@ -31,14 +32,32 @@
                     <label>Password</label>
                     <input type="password" name="password" required>
                 </div>
-                <button class="form-btn" type="submit">
-                    Login
-                </button>
+
+                <!-- Remember Me + Forgot Password row -->
+                <div class="login-options">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember_me">
+                        Remember Me
+                    </label>
+                    <a href="{% url 'forgot_password' %}" class="forgot-link">
+                        Forgot Password?
+                    </a>
+                </div>
+
+                <button class="form-btn" type="submit">Login</button>
             </form>
 
             <div class="auth-footer">
                 Don't have an account?
                 <a href="{% url 'register' %}">Register</a>
+            </div>
+            
+            <!--  "Back to Home" link below the logo: -->
+            <div style="text-align:center; margin-bottom: 16px;">
+                <a href="{% url 'client_dashboard' %}"
+                    style="font-size:13px; color:#888; text-decoration:none;">
+                    <i class="bi bi-arrow-left"></i> Back to Home
+                </a>
             </div>
         </div>
     </div>

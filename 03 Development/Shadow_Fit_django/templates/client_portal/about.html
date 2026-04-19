@@ -1,0 +1,108 @@
+{% extends "client_portal/base_client.html" %}
+{% block title %}About Us | Shadow Fit{% endblock %}
+
+{% block content %}
+<div class="about-page">
+
+    <!-- Hero -->
+    <div class="about-hero">
+        <h1>About <span class="text-green">Shadow Fit</span></h1>
+        <p>Nepal's premier gym — built for those who push limits.</p>
+    </div>
+
+    <!-- Mission -->
+    <div class="about-section">
+        <div class="about-grid">
+            <div class="about-text">
+                <h2>Our <span class="text-green">Mission</span></h2>
+                <p>
+                    Shadow Fit was founded with a single mission — to make
+                    professional fitness training accessible to everyone in Nepal.
+                    We believe fitness is not a luxury but a necessity, and we're
+                    here to make that journey as smooth and effective as possible.
+                </p>
+                <p>
+                    With expert trainers, modern facilities, and a flexible
+                    membership system, we're committed to helping you achieve
+                    your fitness goals — whether you're just starting out or
+                    training for competition.
+                </p>
+            </div>
+            <div class="about-stats-box">
+                <div class="about-stat">
+                    <h3 class="text-green">6+</h3>
+                    <p>Expert Trainers</p>
+                </div>
+                <div class="about-stat">
+                    <h3 class="text-green">3</h3>
+                    <p>Daily Shifts</p>
+                </div>
+                <div class="about-stat">
+                    <h3 class="text-green">6</h3>
+                    <p>Days a Week</p>
+                </div>
+                <div class="about-stat">
+                    <h3 class="text-green">100%</h3>
+                    <p>Commitment</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Values -->
+    <div class="about-section bg-light-section">
+        <div style="max-width:1200px; margin:auto; padding: 0 24px;">
+            <div class="section-header">
+                <h2>Our <span class="text-green">Values</span></h2>
+                <p>What drives us every single day</p>
+            </div>
+            <div class="values-grid">
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h4>Integrity</h4>
+                    <p>We are transparent with our pricing, services, and commitments.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h4>Community</h4>
+                    <p>We build a supportive community that motivates each other.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="bi bi-trophy"></i>
+                    </div>
+                    <h4>Excellence</h4>
+                    <p>We hold ourselves to the highest standards in training and service.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="bi bi-heart-pulse"></i>
+                    </div>
+                    <h4>Wellness</h4>
+                    <p>We care about your overall health — body and mind.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="about-cta">
+        <h2>Ready to Start Your Journey?</h2>
+        <p>Join Shadow Fit today and transform your life.</p>
+        <div class="d-flex gap-3 justify-content-center mt-4">
+            <a href="{% url 'membership_list' %}" class="client-btn-green">
+                <i class="bi bi-bag-check"></i> View Plans
+            </a>
+            <a href="{% url 'contact_us' %}" class="client-btn-outline"
+                style="border-color: rgba(255,255,255,0.5);">
+                <i class="bi bi-envelope"></i> Contact Us
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -6,6 +6,8 @@ class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
     first_name = forms.CharField(max_length=150, required=True)
     last_name = forms.CharField(max_length=150, required=True)
+    phone = forms.CharField(max_length=20, required=False)    
+    photo = forms.ImageField(required=False) 
 
     class Meta:
         model = CustomUser
@@ -15,6 +17,7 @@ class RegisterForm(UserCreationForm):
             'last_name',
             'email',
             'phone',
+            'photo',
             'password1',
             'password2'
         ]
@@ -25,6 +28,14 @@ class RegisterForm(UserCreationForm):
             raise forms.ValidationError("Email is already registered")
         return email
 
+
 class LoginForm(AuthenticationForm):
-    username = forms.CharField(max_length=150, widget=forms.TextInput(attrs={'placeholder': 'Username'}))
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Password'}))
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'placeholder': 'Username'})
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'placeholder': 'Password'})
+    )
+    # Remember Me checkbox
+    remember_me = forms.BooleanField(required=False)

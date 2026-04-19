@@ -6,34 +6,40 @@
 {% block content %}
 <div class="admin-form-card">
     <div class="text-center mb-4">
-        <i class="bi bi-check-circle-fill text-success" style="font-size:48px;"></i>
-        <h5 class="mt-3">Verify this payment?</h5>
-        <p class="text-muted">This will mark the payment as Completed.</p>
+        <i class="bi bi-shield-check" style="font-size:48px; color: var(--navy);"></i>
+        <h5 class="mt-3">Process this Payment?</h5>
+        <p class="text-muted">Verify to confirm, or mark as Not Verified to cancel.</p>
     </div>
 
     <div style="background:#f8f9fa; border-radius:8px; padding:16px; margin-bottom:24px;">
         <p class="mb-1">
             <strong>Client:</strong> {{ payment.user.get_full_name }}
+            (@{{ payment.user.username }})
         </p>
-        <p class="mb-1">
-            <strong>Amount:</strong> Rs. {{ payment.amount }}
-        </p>
-        <p class="mb-1">
-            <strong>Method:</strong> {{ payment.payment_method }}
-        </p>
+        <p class="mb-1"><strong>Email:</strong> {{ payment.user.email }}</p>
+        <p class="mb-1"><strong>Amount:</strong> Rs. {{ payment.amount }}</p>
+        <p class="mb-1"><strong>Method:</strong> {{ payment.payment_method }}</p>
         <p class="mb-0">
-            <strong>Date:</strong> {{ payment.payment_date|date:"M d, Y" }}
+            <strong>Date:</strong> {{ payment.payment_date|date:"M d, Y h:i A" }}
         </p>
     </div>
 
     <form method="POST">
         {% csrf_token %}
         <div class="d-flex gap-2">
-            <button type="submit" class="btn-admin-success">
-                <i class="bi bi-check-lg"></i> Yes, Verify
+            <!-- Verify button -->
+            <button type="submit" name="action" value="verify"
+                class="btn-admin-success">
+                <i class="bi bi-check-circle"></i> Verify Payment
             </button>
+            <!-- Not Verified / Reject button -->
+            <button type="submit" name="action" value="reject"
+                class="btn-admin-danger">
+                <i class="bi bi-x-circle"></i> Not Verified
+            </button>
+            <!-- Cancel / Go back -->
             <a href="{% url 'payment_list' %}" class="btn-admin-primary">
-                <i class="bi bi-x-lg"></i> Cancel
+                <i class="bi bi-arrow-left"></i> Back
             </a>
         </div>
     </form>

@@ -1,0 +1,174 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Generate Reports{% endblock %}
+{% block breadcrumb %}Reports{% endblock %}
+
+{% block content %}
+
+<!-- ─── Report Filter Bar ──────────────────── -->
+<form method="GET" class="d-flex gap-3 mb-4 align-items-center flex-wrap">
+    <div>
+        <label style="font-size:13px; font-weight:500; margin-right:8px;">Report Type:</label>
+        <select name="type" class="admin-select" onchange="this.form.submit()">
+            <option value="membership" {% if report_type == 'membership' %}selected{% endif %}>
+                Membership Report
+            </option>
+            <option value="booking" {% if report_type == 'booking' %}selected{% endif %}>
+                Booking Report
+            </option>
+            <option value="trainer" {% if report_type == 'trainer' %}selected{% endif %}>
+                Trainer Performance
+            </option>
+        </select>
+    </div>
+    <div>
+        <label style="font-size:13px; font-weight:500; margin-right:8px;">Period:</label>
+        <select name="period" class="admin-select" onchange="this.form.submit()">
+            <option value="all" {% if period == 'all' %}selected{% endif %}>All Time</option>
+            <option value="week" {% if period == 'week' %}selected{% endif %}>Last Week</option>
+            <option value="month" {% if period == 'month' %}selected{% endif %}>Last Month</option>
+            <option value="3months" {% if period == '3months' %}selected{% endif %}>
+                Last 3 Months
+            </option>
+        </select>
+    </div>
+    <div class="ms-auto" style="font-size:14px; color:#666;">
+        Revenue (period): <strong style="color: var(--green);">Rs. {{ period_revenue }}</strong>
+        &nbsp;|&nbsp;
+        Total Revenue: <strong>Rs. {{ total_revenue }}</strong>
+    </div>
+</form>
+
+<!-- ─── Membership Report ──────────────────── -->
+{% if report_type == 'membership' %}
+<div class="admin-table">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Client</th>
+                <th>Plan</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sub in data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ sub.user.get_full_name }}</td>
+                <td>{{ sub.plan.plan_name }}</td>
+                <td>{{ sub.start_date|date:"M d, Y" }}</td>
+                <td>{{ sub.end_date|date:"M d, Y" }}</td>
+                <td>
+                    {% if sub.subs_status == 'Active' %}
+                        <span class="badge-status badge-confirmed">Active</span>
+                    {% elif sub.subs_status == 'On Hold' %}
+                        <span class="badge-status badge-pending">On Hold</span>
+                    {% elif sub.subs_status == 'Cancelled' %}
+                        <span class="badge-status badge-cancelled">Cancelled</span>
+                    {% elif sub.subs_status == 'Expired' %}
+                        <span class="badge-status badge-completed">Expired</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center; padding:30px; color:#999;">
+                    No membership data found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ─── Booking Report ────────────────────── -->
+{% elif report_type == 'booking' %}
+<div class="admin-table">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Client</th>
+                <th>Trainer</th>
+                <th>Shift</th>
+                <th>Duration</th>
+                <th>Booked On</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ booking.user.get_full_name }}</td>
+                <td>{{ booking.schedule.trainer.user.get_full_name }}</td>
+                <td>{{ booking.schedule.shift_name }}</td>
+                <td>{{ booking.duration }}</td>
+                <td>{{ booking.booking_date|date:"M d, Y" }}</td>
+                <td>
+                    {% if booking.booking_status == 'Pending' %}
+                        <span class="badge-status badge-pending">Pending</span>
+                    {% elif booking.booking_status == 'Confirmed' %}
+                        <span class="badge-status badge-confirmed">Confirmed</span>
+                    {% elif booking.booking_status == 'Cancelled' %}
+                        <span class="badge-status badge-cancelled">Cancelled</span>
+                    {% elif booking.booking_status == 'Completed' %}
+                        <span class="badge-status badge-completed">Completed</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align:center; padding:30px; color:#999;">
+                    No booking data found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ─── Trainer Performance ───────────────── -->
+{% elif report_type == 'trainer' %}
+<div class="admin-table">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Trainer</th>
+                <th>Specialty</th>
+                <th>Experience</th>
+                <th>Total Bookings</th>
+                <th>Confirmed</th>
+                <th>Session Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trainer in data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ trainer.user.get_full_name }}</td>
+                <td>{{ trainer.specialty }}</td>
+                <td>{{ trainer.experience }} yrs</td>
+                <td>{{ trainer.total_bookings }}</td>
+                <td>{{ trainer.confirmed_bookings }}</td>
+                <td>Rs. {{ trainer.session_price }}/week</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align:center; padding:30px; color:#999;">
+                    No trainer data found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Pagination -->
+{% include "admin_panel/includes/pagination.html" with page_obj=Reports %}
+{% endblock %}

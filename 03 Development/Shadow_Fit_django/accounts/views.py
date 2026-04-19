@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
+from django.contrib.auth.forms import PasswordResetForm
 from .forms import RegisterForm, LoginForm
 from django.contrib import messages
 
@@ -34,12 +36,19 @@ def login_view(request):
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
-            login(request, form.get_user())
+            login(request, user)
+
+            # Handle Remember Me — session expires on browser close if unchecked
+            if not form.cleaned_data.get('remember_me'):
+                request.session.set_expiry(0)  # expires when browser closes
+            else:
+                request.session.set_expiry(1209600)  # 2 weeks
+
             messages.success(request, "Login successful!")
             if user.role == 'Admin':
                 return redirect('admin_dashboard')
             elif user.role == 'Trainer':
-                return redirect('dashboard') 
+                return redirect('dashboard')
             else:
                 return redirect('client_dashboard')
         else:
@@ -47,6 +56,63 @@ def login_view(request):
     else:
         form = LoginForm()
     return render(request, 'accounts/login.html', {'form': form})
+
+# Forgot Password
+def forgot_password(request):
+    """
+    Sends password reset email to user.
+    """
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        if not email:
+            messages.error(request, "Please enter your email address.")
+            return render(request, 'accounts/forgot_password.html')
+
+        try:
+            from accounts.models import CustomUser
+            from client_portal.notifications import send_email
+            import secrets
+
+            # Check if user exists
+            try:
+                user = CustomUser.objects.get(email=email)
+            except CustomUser.DoesNotExist:
+                # Don't reveal if email exists — security best practice
+                messages.success(
+                    request,
+                    "If that email is registered, a reset link will be sent."
+                )
+                return redirect('login')
+
+            # Generate a temporary password
+            temp_password = secrets.token_urlsafe(8)
+            user.set_password(temp_password)
+            user.save()
+
+            # Send temporary password via email
+            send_email(
+                subject="Shadow Fit — Password Reset",
+                message=(
+                    f"Hi {user.get_full_name()},\n\n"
+                    f"Your password has been reset.\n\n"
+                    f"Temporary Password: {temp_password}\n\n"
+                    f"Please login and change your password immediately.\n"
+                    f"Login at: http://127.0.0.1:8000/login/\n\n"
+                    f"Shadow Fit Team"
+                ),
+                recipient_email=email,
+            )
+
+            messages.success(
+                request,
+                "A temporary password has been sent to your email."
+            )
+            return redirect('login')
+
+        except Exception as e:
+            messages.error(request, "Failed to process request. Please try again.")
+
+    return render(request, 'accounts/forgot_password.html')
 
 # Logout
 def logout_view(request):

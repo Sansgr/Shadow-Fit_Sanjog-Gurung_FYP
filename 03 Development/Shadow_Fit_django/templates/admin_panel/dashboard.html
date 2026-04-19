@@ -4,56 +4,233 @@
 {% block breadcrumb %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="row g-4">
-
-    <!-- Stat Cards (placeholders for now, will fill with real data later) -->
-    <div class="col-md-3">
+<!-- ─── Stat Cards ──────────────────────────── -->
+<div class="row g-4 mb-4">
+    <div class="col-md-2">
         <div class="admin-stat-card">
             <div class="stat-icon bg-blue">
                 <i class="bi bi-people-fill"></i>
             </div>
             <div class="stat-info">
-                <h3>--</h3>
+                <h3>{{ total_clients }}</h3>
                 <p>Total Clients</p>
             </div>
         </div>
     </div>
-
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="admin-stat-card">
             <div class="stat-icon bg-green">
                 <i class="bi bi-person-badge-fill"></i>
             </div>
             <div class="stat-info">
-                <h3>--</h3>
+                <h3>{{ total_trainers }}</h3>
                 <p>Total Trainers</p>
             </div>
         </div>
     </div>
-
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="admin-stat-card">
             <div class="stat-icon bg-orange">
                 <i class="bi bi-journal-check"></i>
             </div>
             <div class="stat-info">
-                <h3>--</h3>
+                <h3>{{ total_bookings }}</h3>
                 <p>Total Bookings</p>
             </div>
         </div>
     </div>
-
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="admin-stat-card">
             <div class="stat-icon bg-purple">
-                <i class="bi bi-credit-card-fill"></i>
+                <i class="bi bi-card-checklist"></i>
             </div>
             <div class="stat-info">
-                <h3>--</h3>
-                <p>Total Payments</p>
+                <h3>{{ active_subscriptions }}</h3>
+                <p>Active Subs</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="admin-stat-card">
+            <div class="stat-icon" style="background:#e67e22;">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ pending_payments }}</h3>
+                <p>Pending Payments</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="admin-stat-card">
+            <div class="stat-icon" style="background:#27ae60;">
+                <i class="bi bi-currency-rupee"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_revenue }}</h3>
+                <p>Total Revenue</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Charts Row ─────────────────────────── -->
+<div class="row g-4 mb-4">
+    <!-- Monthly Revenue Chart -->
+    <div class="col-md-8">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">Monthly Revenue</h6>
+            <canvas id="revenueChart" height="100"></canvas>
+        </div>
+    </div>
+    <!-- Subscription Status Chart -->
+    <div class="col-md-4">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">Subscription Status</h6>
+            <canvas id="subStatusChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Recent Activity Row ───────────────── -->
+<div class="row g-4">
+    <!-- Recent Bookings -->
+    <div class="col-md-6">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">Recent Bookings</h6>
+            <div class="admin-table mt-3">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Trainer</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in recent_bookings %}
+                        <tr>
+                            <td>{{ booking.user.get_full_name }}</td>
+                            <td>{{ booking.schedule.trainer.user.get_full_name }}</td>
+                            <td>
+                                {% if booking.booking_status == 'Pending' %}
+                                    <span class="badge-status badge-pending">Pending</span>
+                                {% elif booking.booking_status == 'Confirmed' %}
+                                    <span class="badge-status badge-confirmed">Confirmed</span>
+                                {% elif booking.booking_status == 'Cancelled' %}
+                                    <span class="badge-status badge-cancelled">Cancelled</span>
+                                {% elif booking.booking_status == 'Completed' %}
+                                    <span class="badge-status badge-completed">Completed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" style="text-align:center; color:#999;">
+                                No bookings yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
+    <!-- Recent Payments -->
+    <div class="col-md-6">
+        <div class="admin-chart-card">
+            <h6 class="chart-title">Recent Payments</h6>
+            <div class="admin-table mt-3">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in recent_payments %}
+                        <tr>
+                            <td>{{ payment.user.get_full_name }}</td>
+                            <td>Rs. {{ payment.amount }}</td>
+                            <td>
+                                {% if payment.payment_status == 'Completed' %}
+                                    <span class="badge-status badge-confirmed">Completed</span>
+                                {% elif payment.payment_status == 'Pending' %}
+                                    <span class="badge-status badge-pending">Pending</span>
+                                {% elif payment.payment_status == 'Failed' %}
+                                    <span class="badge-status badge-cancelled">Failed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" style="text-align:center; color:#999;">
+                                No payments yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Parse JSON safely
+    const revenueLabels = JSON.parse(document.getElementById('revenue-labels').textContent);
+    const revenueData = JSON.parse(document.getElementById('revenue-data').textContent);
+
+    const subLabels = JSON.parse(document.getElementById('sub-labels').textContent);
+    const subCounts = JSON.parse(document.getElementById('sub-counts').textContent);
+
+    // ─── Monthly Revenue Bar Chart ─────────────────
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'bar',
+        data: {
+            labels: revenueLabels,
+            datasets: [{
+                label: 'Revenue (Rs.)',
+                data: revenueData,
+                backgroundColor: 'rgba(32, 192, 92, 0.7)',
+                borderColor: '#20c05c',
+                borderWidth: 2,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // ─── Subscription Status Doughnut Chart ────────
+    const subCtx = document.getElementById('subStatusChart').getContext('2d');
+    new Chart(subCtx, {
+        type: 'doughnut',
+        data: {
+            labels: subLabels,
+            datasets: [{
+                data: subCounts,
+                backgroundColor: ['#20c05c', '#f39c12', '#e74c3c', '#3498db']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+</script>
 {% endblock %}

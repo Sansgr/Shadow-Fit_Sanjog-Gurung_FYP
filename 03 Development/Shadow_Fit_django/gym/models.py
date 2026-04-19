@@ -178,3 +178,21 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.user.username} — {self.title}"
+    
+    
+# 8) Inquiry model to store contact inquiries from clients
+class Inquiry(models.Model):
+    """
+    Stores contact inquiries from clients.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True  # Allow anonymous inquiries
+    )
+    subject = models.CharField(max_length=150)
+    message = models.TextField(max_length=500)
+    date_sent = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.subject} — {self.date_sent.strftime('%Y-%m-%d')}"

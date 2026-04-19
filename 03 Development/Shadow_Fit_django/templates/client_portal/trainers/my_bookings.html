@@ -74,6 +74,77 @@
             </div>
             {% endfor %}
 
+            <!-- ─── Booking History ───────────────────────── -->
+            {% if history %}
+            <h4 class="mt-5 mb-3">
+                <i class="bi bi-clock-history me-2 text-green"></i>Booking History
+            </h4>
+            {% for h in history %}
+            <div class="booking-detail-card mb-3"
+                style="opacity: 0.85; border-left: 4px solid #dee2e6;">
+                <div class="booking-card-header">
+                    <div>
+                        <h5>{{ h.schedule.trainer.user.get_full_name }}</h5>
+                        <span class="trainer-specialty">
+                            {{ h.schedule.trainer.specialty }}
+                        </span>
+                    </div>
+                    <div>
+                        {% if h.booking_status == 'Cancelled' %}
+                            <span class="badge-status badge-cancelled">Cancelled</span>
+                        {% elif h.booking_status == 'Completed' %}
+                            <span class="badge-status badge-completed">Completed</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="booking-detail-grid">
+                    <div class="info-item">
+                        <label>Shift</label>
+                        <p>
+                            <span class="shift-badge shift-{{ h.schedule.shift_name|lower }}">
+                                {{ h.schedule.shift_name }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="info-item">
+                        <label>Duration</label>
+                        <p>{{ h.duration }}</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Start Date</label>
+                        <p>{{ h.start_date|date:"M d, Y" }}</p>
+                    </div>
+                    <div class="info-item">
+                        <label>End Date</label>
+                        <p>{{ h.end_date|date:"M d, Y"|default:"—" }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Pagination -->
+            {% if history.has_other_pages %}
+            <div class="pagination-bar mt-3">
+                {% if history.has_previous %}
+                    <a href="?history_page={{ history.previous_page_number }}" class="page-btn">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                {% endif %}
+                {% for num in history.paginator.page_range %}
+                    <a href="?history_page={{ num }}"
+                        class="page-btn {% if history.number == num %}active{% endif %}">
+                        {{ num }}
+                    </a>
+                {% endfor %}
+                {% if history.has_next %}
+                    <a href="?history_page={{ history.next_page_number }}" class="page-btn">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endif %}
+
         {% else %}
         <div class="no-membership-card">
             <i class="bi bi-journal-x" style="color: var(--text-muted);"></i>

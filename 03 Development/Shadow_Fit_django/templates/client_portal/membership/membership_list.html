@@ -17,14 +17,55 @@
     </div>
     {% endif %}
 
-    <div class="plans-grid mt-4">
+    <!-- ─── Search & Filter ──────────────────────── -->
+    <form method="GET" class="filter-bar mt-4 mb-4">
+        <div class="filter-bar-inner">
+            <div class="filter-search">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" placeholder="Search plans..."
+                    value="{{ search }}">
+            </div>
+            <div class="filter-group">
+                <input type="number" name="min_price" placeholder="Min Price (Rs.)"
+                    value="{{ min_price }}" min="0">
+            </div>
+            <div class="filter-group">
+                <input type="number" name="max_price" placeholder="Max Price (Rs.)"
+                    value="{{ max_price }}" min="0">
+            </div>
+            <div class="filter-group">
+                <select name="duration">
+                    <option value="">All Durations</option>
+                    <option value="1" {% if duration == '1' %}selected{% endif %}>1 Month</option>
+                    <option value="3" {% if duration == '3' %}selected{% endif %}>3 Months</option>
+                    <option value="6" {% if duration == '6' %}selected{% endif %}>6 Months</option>
+                    <option value="12" {% if duration == '12' %}selected{% endif %}>12 Months</option>
+                </select>
+            </div>
+            <button type="submit" class="client-btn-green">
+                <i class="bi bi-funnel"></i> Filter
+            </button>
+            {% if search or min_price or max_price or duration %}
+            <a href="{% url 'membership_list' %}" class="client-btn-outline"
+                style="color:#333; border-color:#ccc;">
+                <i class="bi bi-x"></i> Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    <!-- ─── Plans Grid ───────────────────────────── -->
+    {% if plans %}
+    <div class="plans-grid">
         {% for plan in plans %}
         <div class="plan-card">
             <div class="plan-header">
                 <h3>{{ plan.plan_name }}</h3>
                 <div class="plan-price">
                     <span class="price">Rs. {{ plan.price }}</span>
-                    <span class="duration">/ {{ plan.duration }} month{{ plan.duration|pluralize }}</span>
+                    <span class="duration">
+                        / {{ plan.duration }} month{{ plan.duration|pluralize }}
+                    </span>
                 </div>
             </div>
             <div class="plan-body">
@@ -32,16 +73,18 @@
             </div>
             <div class="plan-footer">
                 {% if active_subscription %}
-                    <button class="client-btn-outline w-100 text-center" disabled
-                        style="opacity:0.5; cursor:not-allowed; color:#333; border-color:#ccc;">
+                    <button class="client-btn-outline w-100 text-center"
+                        disabled style="opacity:0.5; cursor:not-allowed; color:#333; border-color:#ccc;">
                         Already Subscribed
                     </button>
                 {% elif request.user.is_authenticated %}
-                    <a href="{% url 'membership_checkout' plan.pk %}" class="client-btn-green w-100 text-center">
+                    <a href="{% url 'membership_checkout' plan.pk %}"
+                        class="client-btn-green w-100 text-center">
                         <i class="bi bi-bag-check"></i> Purchase Plan
                     </a>
                 {% else %}
-                    <button onclick="showAuthPopup('purchase')" class="client-btn-green w-100 text-center">
+                    <button onclick="showAuthPopup('purchase')"
+                        class="client-btn-green w-100 text-center">
                         <i class="bi bi-bag-check"></i> Purchase Plan
                     </button>
                 {% endif %}
@@ -49,14 +92,48 @@
         </div>
         {% endfor %}
     </div>
+
+    <!-- ─── Pagination ───────────────────────────── -->
+    {% if plans.has_other_pages %}
+    <div class="pagination-bar mt-5">
+        {% if plans.has_previous %}
+            <a href="?page={{ plans.previous_page_number }}&search={{ search }}&min_price={{ min_price }}&max_price={{ max_price }}&duration={{ duration }}"
+                class="page-btn">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        {% endif %}
+        {% for num in plans.paginator.page_range %}
+            <a href="?page={{ num }}&search={{ search }}&min_price={{ min_price }}&max_price={{ max_price }}&duration={{ duration }}"
+                class="page-btn {% if plans.number == num %}active{% endif %}">
+                {{ num }}
+            </a>
+        {% endfor %}
+        {% if plans.has_next %}
+            <a href="?page={{ plans.next_page_number }}&search={{ search }}&min_price={{ min_price }}&max_price={{ max_price }}&duration={{ duration }}"
+                class="page-btn">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="no-membership-card">
+        <i class="bi bi-search" style="color: var(--text-muted);"></i>
+        <h5>No Plans Found</h5>
+        <p>Try adjusting your search or filter criteria.</p>
+        <a href="{% url 'membership_list' %}" class="client-btn-green mt-3">
+            Clear Filters
+        </a>
+    </div>
+    {% endif %}
+
 </div>
 
-<!-- Auth Popup for guests -->
+<!-- Auth Popup -->
 <div id="authPopup" class="auth-popup-overlay" style="display:none;">
     <div class="auth-popup-box">
-        <div class="auth-popup-icon">
-            <i class="bi bi-lock-fill"></i>
-        </div>
+        <div class="auth-popup-icon"><i class="bi bi-lock-fill"></i></div>
         <h5 id="authPopupTitle">Login Required</h5>
         <p id="authPopupMessage">You need to login to continue.</p>
         <div class="d-flex gap-3 justify-content-center mt-4">
@@ -73,7 +150,6 @@
         </button>
     </div>
 </div>
-
 <script>
     function showAuthPopup(type) {
         document.getElementById('authPopup').style.display = 'flex';

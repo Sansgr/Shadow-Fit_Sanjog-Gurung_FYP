@@ -33,4 +33,8 @@ urlpatterns = [
 
     # Notifications
     path('notifications/', views.notifications_list, name='notifications_list'), 
+
+    # About & Contact
+    path('about/', views.about_us, name='about_us'),
+    path('contact/', views.contact_us, name='contact_us'),
 ]

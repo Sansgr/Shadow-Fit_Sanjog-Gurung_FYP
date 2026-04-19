@@ -11,7 +11,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+import ssl
+import certifi
 from pathlib import Path
+from logging import config
+from decouple import config as decouple_config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -153,6 +157,29 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'grgsandriyos@gmail.com'       
-EMAIL_HOST_PASSWORD = 'epvp gsqg xvbm osvs'
-DEFAULT_FROM_EMAIL = 'Shadow Fit <grgsandriyos@gmail.com>'
+EMAIL_HOST_USER = decouple_config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = decouple_config('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = f'Shadow Fit <{decouple_config("EMAIL_HOST_USER")}>'
+
+# SSL certificate verification issue on Windows + Python 3.13
+EMAIL_SSL_CERTFILE = None
+EMAIL_SSL_KEYFILE = None
+
+# ─── LOGGING ──────────────────────────────────────────
+# Shows email and notification logs in console during development
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'client_portal.notifications': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}

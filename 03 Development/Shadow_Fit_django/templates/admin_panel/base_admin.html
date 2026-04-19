@@ -101,7 +101,7 @@
                 <li class="sidebar-heading">Reports</li>
 
                 <li>
-                    <a href="#"
+                    <a href="{% url 'reports' %}"
                         class="{% if 'report' in request.resolver_match.url_name %}active{% endif %}">
                         <i class="bi bi-bar-chart-line"></i> Reports
                     </a>

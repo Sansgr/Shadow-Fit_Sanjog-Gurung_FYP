@@ -5,15 +5,58 @@
 <div class="client-section" style="padding-top:50px;">
     <div class="section-header">
         <h2>Our <span class="text-green">Trainers</span></h2>
-        <p>Expert trainers ready to guide your fitness journey — available Sunday to Friday</p>
+        <p>Expert trainers available Sunday to Friday</p>
     </div>
 
+    <!-- ─── Search & Filter ──────────────────────── -->
+    <form method="GET" class="filter-bar mb-4">
+        <div class="filter-bar-inner">
+            <div class="filter-search">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" placeholder="Search trainers..."
+                    value="{{ search }}">
+            </div>
+            <div class="filter-group">
+                <select name="specialty">
+                    <option value="">All Specialties</option>
+                    {% for s in all_specialties %}
+                    <option value="{{ s }}" {% if specialty == s %}selected{% endif %}>
+                        {{ s }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <select name="shift">
+                    <option value="">All Shifts</option>
+                    {% for s in shift_choices %}
+                    <option value="{{ s }}" {% if shift == s %}selected{% endif %}>
+                        {{ s }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="client-btn-green">
+                <i class="bi bi-funnel"></i> Filter
+            </button>
+            {% if search or specialty or shift %}
+            <a href="{% url 'trainer_list' %}" class="client-btn-outline"
+                style="color:#333; border-color:#ccc;">
+                <i class="bi bi-x"></i> Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    <!-- ─── Trainers Grid ────────────────────────── -->
+    {% if trainers %}
     <div class="trainers-grid">
         {% for trainer in trainers %}
         <div class="trainer-card">
             <div class="trainer-photo">
                 {% if trainer.user.photo %}
-                    <img src="{{ trainer.user.photo.url }}" alt="{{ trainer.user.get_full_name }}">
+                    <img src="{{ trainer.user.photo.url }}"
+                        alt="{{ trainer.user.get_full_name }}">
                 {% else %}
                     <div class="trainer-photo-placeholder">
                         <i class="bi bi-person-fill"></i>
@@ -25,24 +68,62 @@
                 <span class="trainer-specialty">{{ trainer.specialty }}</span>
                 <p class="trainer-bio">{{ trainer.bio|truncatechars:80 }}</p>
                 <div class="trainer-meta">
-                    <span><i class="bi bi-clock"></i> {{ trainer.experience }} yrs exp</span>
-                    <span><i class="bi bi-currency-rupee"></i> Rs. {{ trainer.session_price }}/session</span>
+                    <span><i class="bi bi-clock"></i> {{ trainer.experience }} yrs</span>
+                    <span>
+                        <i class="bi bi-currency-rupee"></i>
+                        Rs. {{ trainer.session_price }}/week
+                    </span>
                 </div>
                 <div class="trainer-shifts">
                     {% for schedule in trainer.schedules.all %}
-                        <span class="shift-badge shift-{{ schedule.shift_name|lower }}">
-                            {{ schedule.shift_name }}
-                        </span>
+                    <span class="shift-badge shift-{{ schedule.shift_name|lower }}">
+                        {{ schedule.shift_name }}
+                    </span>
                     {% endfor %}
                 </div>
-                <a href="{% url 'trainer_detail' trainer.pk %}" class="client-btn-green w-100 text-center mt-3">
+                <a href="{% url 'trainer_detail' trainer.pk %}"
+                    class="client-btn-green w-100 text-center mt-3">
                     <i class="bi bi-eye"></i> View & Book
                 </a>
             </div>
         </div>
-        {% empty %}
-        <p class="text-muted">No trainers available.</p>
         {% endfor %}
     </div>
+
+    <!-- ─── Pagination ───────────────────────────── -->
+    {% if trainers.has_other_pages %}
+    <div class="pagination-bar mt-5">
+        {% if trainers.has_previous %}
+            <a href="?page={{ trainers.previous_page_number }}&search={{ search }}&specialty={{ specialty }}&shift={{ shift }}"
+                class="page-btn">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        {% endif %}
+        {% for num in trainers.paginator.page_range %}
+            <a href="?page={{ num }}&search={{ search }}&specialty={{ specialty }}&shift={{ shift }}"
+                class="page-btn {% if trainers.number == num %}active{% endif %}">
+                {{ num }}
+            </a>
+        {% endfor %}
+        {% if trainers.has_next %}
+            <a href="?page={{ trainers.next_page_number }}&search={{ search }}&specialty={{ specialty }}&shift={{ shift }}"
+                class="page-btn">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="no-membership-card">
+        <i class="bi bi-search" style="color: var(--text-muted);"></i>
+        <h5>No Trainers Found</h5>
+        <p>Try adjusting your search or filter criteria.</p>
+        <a href="{% url 'trainer_list' %}" class="client-btn-green mt-3">
+            Clear Filters
+        </a>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}

@@ -1,20 +1,124 @@
+import json
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 
+from django.db.models import Count, Sum
+from django.db.models.functions import TruncMonth
+from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+from accounts import models
 from admin_panel.decorators import admin_required
 from accounts.models import CustomUser
-from client_portal.notifications import notify_membership_cancelled, notify_membership_hold, notify_membership_purchased, notify_membership_unhold
 from gym.models import Booking, MembershipPlan, Payment, Schedule, Subscription, Trainer
-from admin_panel.forms import ClientForm, MembershipPlanForm, ScheduleForm, TrainerUserForm, TrainerProfileForm, BookingForm, AdminSubscriptionForm 
+from admin_panel.forms import ClientForm, MembershipPlanForm, ScheduleForm, TrainerUserForm, TrainerProfileForm, BookingForm, AdminSubscriptionForm
+from client_portal.notifications import (
+    notify_membership_purchased,
+    notify_membership_hold,
+    notify_membership_unhold,
+    notify_membership_cancelled,
+    notify_booking_status_changed,
+    notify_account_created,
+) 
+
+# Helper: Pagination function to reuse in list views
+def paginate(queryset, request, per_page=10):
+    """
+    Helper to paginate any queryset.
+    Reads 'page' from GET params.
+    """
+    paginator = Paginator(queryset, per_page)
+    page = request.GET.get('page', 1)
+    try:
+        return paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        return paginator.page(1)
 
 
 # 1) ADMIN DASHBOARD 
 @admin_required
 def admin_dashboard(request):
-    return render(request, 'admin_panel/dashboard.html')
+    """
+    Admin dashboard with real-time stats and charts.
+    """
+    try:
+        # ─── Summary Stats ────────────────────────────
+        total_clients = CustomUser.objects.filter(role='Member').count()
+        total_trainers = Trainer.objects.count()
+        total_bookings = Booking.objects.count()
+        active_subscriptions = Subscription.objects.filter(subs_status='Active').count()
+        pending_payments = Payment.objects.filter(payment_status='Pending').count()
+        total_revenue = Payment.objects.filter(
+            payment_status='Completed'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        # ─── Recent Activity ──────────────────────────
+        recent_bookings = Booking.objects.select_related(
+            'user', 'schedule__trainer__user'
+        ).order_by('-booking_date')[:5]
+
+        recent_payments = Payment.objects.select_related(
+            'user'
+        ).order_by('-payment_date')[:5]
+
+        # ─── Monthly Revenue Chart Data ───────────────
+        monthly_revenue = Payment.objects.filter(
+            payment_status='Completed'
+        ).annotate(
+            month=TruncMonth('payment_date')
+        ).values('month').annotate(
+            total=Sum('amount')
+        ).order_by('month')[:6]
+
+        revenue_labels = [
+            item['month'].strftime('%b %Y') for item in monthly_revenue
+        ]
+        revenue_data = [
+            float(item['total']) for item in monthly_revenue
+        ]
+
+        # ─── Booking Status Chart Data ─────────────────
+        booking_status = Booking.objects.values('booking_status').annotate(
+            count=Count('id')
+        )
+        booking_labels = [item['booking_status'] for item in booking_status]
+        booking_counts = [item['count'] for item in booking_status]
+
+        # ─── Subscription Status Chart Data ───────────
+        sub_status = Subscription.objects.values('subs_status').annotate(
+            count=Count('id')
+        )
+        sub_labels = [item['subs_status'] for item in sub_status]
+        sub_counts = [item['count'] for item in sub_status]
+
+    except Exception as e:
+        total_clients = total_trainers = total_bookings = 0
+        active_subscriptions = pending_payments = total_revenue = 0
+        recent_bookings = recent_payments = []
+        revenue_labels = revenue_data = []
+        booking_labels = booking_counts = []
+        sub_labels = sub_counts = []
+        messages.error(request, "Failed to load dashboard data.")
+
+    return render(request, 'admin_panel/dashboard.html', {
+        'total_clients': total_clients,
+        'total_trainers': total_trainers,
+        'total_bookings': total_bookings,
+        'active_subscriptions': active_subscriptions,
+        'pending_payments': pending_payments,
+        'total_revenue': total_revenue,
+        'recent_bookings': recent_bookings,
+        'recent_payments': recent_payments,
+        # JSON for charts
+        'revenue_labels': json.dumps(revenue_labels),
+        'revenue_data': json.dumps(revenue_data),
+        'booking_labels': json.dumps(booking_labels),
+        'booking_counts': json.dumps(booking_counts),
+        'sub_labels': json.dumps(sub_labels),
+        'sub_counts': json.dumps(sub_counts),
+    })
 
 
 # 2) CLIENT MANAGEMENT VIEWS
@@ -22,7 +126,10 @@ def admin_dashboard(request):
 @admin_required
 def client_list(request):
     clients = CustomUser.objects.filter(role='Member').order_by('-date_joined')
-    return render(request, 'admin_panel/clients/client_list.html', {'clients': clients})
+    clients_page = paginate(clients, request, 10)
+    return render(request, 'admin_panel/clients/client_list.html', {
+        'clients': clients_page,
+    })
 
 
 # b) CLIENT ADD
@@ -35,6 +142,8 @@ def client_add(request):
             client.role = 'Member'
             client.set_password(f"{form.cleaned_data.get('username')}@123")  # default password
             client.save()
+            default_password = f"{form.cleaned_data.get('username')}@123"
+            notify_account_created(client, default_password)  # sends credentials to client email
             messages.success(request, "Client added successfully!")
             return redirect('client_list')
         else:
@@ -77,7 +186,10 @@ def client_delete(request, pk):
 @admin_required
 def plan_list(request):
     plans = MembershipPlan.objects.all().order_by('price')
-    return render(request, 'admin_panel/plans/plan_list.html', {'plans': plans})
+    plans_page = paginate(plans, request, 10)
+    return render(request, 'admin_panel/plans/plan_list.html', {
+        'plans': plans_page,
+    })
 
 
 # b) PLAN ADD 
@@ -129,7 +241,10 @@ def plan_delete(request, pk):
 @admin_required
 def trainer_list(request):
     trainers = Trainer.objects.select_related('user').all().order_by('user__first_name')
-    return render(request, 'admin_panel/trainers/trainer_list.html', {'trainers': trainers})
+    trainers_page = paginate(trainers, request, 10)
+    return render(request, 'admin_panel/trainers/trainer_list.html', {
+        'trainers': trainers_page,
+    })
 
 
 # b) TRAINER ADD 
@@ -148,6 +263,9 @@ def trainer_add(request):
             trainer = profile_form.save(commit=False)
             trainer.user = user
             trainer.save()
+            # Send account creation notification with credentials
+            default_password = f"{user_form.cleaned_data.get('username')}@123"
+            notify_account_created(user, default_password)  # sends credentials to trainer email
             messages.success(request, "Trainer added successfully!")
             return redirect('admin_trainer_list')
         else:
@@ -200,9 +318,11 @@ def trainer_delete(request, pk):
 # a) SCHEDULE LIST
 @admin_required
 def schedule_list(request):
-    # TO THIS:
     schedules = Schedule.objects.select_related('trainer__user').all().order_by('trainer__user__first_name', 'shift_name')
-    return render(request, 'admin_panel/schedules/schedule_list.html', {'schedules': schedules})
+    schedules_page = paginate(schedules, request, 10)
+    return render(request, 'admin_panel/schedules/schedule_list.html', {
+        'schedules': schedules_page,
+    })
 
 
 # b) SCHEDULE ADD
@@ -253,10 +373,11 @@ def schedule_delete(request, pk):
 # a) BOOKING LIST
 @admin_required
 def booking_list(request):
-    bookings = Booking.objects.select_related(
-        'user', 'schedule__trainer__user'
-    ).all().order_by('-booking_date')
-    return render(request, 'admin_panel/bookings/booking_list.html', {'bookings': bookings})
+    bookings = Booking.objects.select_related('user', 'schedule__trainer__user').all().order_by('-booking_date')
+    bookings_page = paginate(bookings, request, 10)
+    return render(request, 'admin_panel/bookings/booking_list.html', {
+        'bookings': bookings_page,
+    })
 
 
 # b) BOOKING ADD
@@ -286,6 +407,10 @@ def booking_update(request, pk):
         form = BookingForm(request.POST, instance=booking)
         if form.is_valid():
             form.save()
+            # After form.save() in booking_update:
+            new_status = form.cleaned_data.get('booking_status')
+            if new_status in ['Confirmed', 'Cancelled', 'Completed']:
+                notify_booking_status_changed(booking.user, booking, new_status) 
             messages.success(request, "Booking updated successfully!")
             return redirect('booking_list')
         else:
@@ -325,8 +450,9 @@ def subscription_list(request):
         subscriptions = []
         messages.error(request, "Failed to load subscriptions.")
 
+    subscriptions_page = paginate(subscriptions, request, 10)
     return render(request, 'admin_panel/subscriptions/subscription_list.html', {
-        'subscriptions': subscriptions,
+        'subscriptions': subscriptions_page,
     })
 
 
@@ -474,8 +600,9 @@ def payment_list(request):
         payments = []
         messages.error(request, "Failed to load payments.")
 
+    payments_page = paginate(payments, request, 10)
     return render(request, 'admin_panel/payments/payment_list.html', {
-        'payments': payments,
+        'payments': payments_page,
     })
 
 
@@ -483,8 +610,9 @@ def payment_list(request):
 @admin_required
 def payment_verify(request, pk):
     """
-    Admin verifies a pending cash payment —
-    marks it as Completed.
+    Admin verifies or rejects a pending payment.
+    On verify → marks payment Completed + updates related subscription/booking to Active/Confirmed.
+    On reject → marks payment Failed + updates related subscription/booking to Cancelled.
     """
     try:
         payment = get_object_or_404(Payment, pk=pk)
@@ -493,20 +621,189 @@ def payment_verify(request, pk):
         return redirect('payment_list')
 
     if request.method == 'POST':
+        action = request.POST.get('action')  # 'verify' or 'reject'
+
         try:
-            if payment.payment_status == 'Pending':
+            if payment.payment_status != 'Pending':
+                messages.error(request, "This payment has already been processed.")
+                return redirect('payment_list')
+
+            if action == 'verify':
+                # ─── Mark payment as Completed ───────────────
                 payment.payment_status = 'Completed'
                 payment.save()
+
+                # ─── Find and update related subscription ─────
+                # Match by user + payment_date (same day) + Cash method
+                try:
+                    subscription = Subscription.objects.get(
+                        user=payment.user,
+                        subs_status='Active',
+                        start_date=payment.payment_date.date(),
+                    )
+                    # Subscription is already Active for cash — just notify
+                    notify_membership_purchased(
+                        payment.user,
+                        subscription.plan,
+                        'Cash (Verified)'
+                    )
+                except Subscription.DoesNotExist:
+                    pass
+                except Exception:
+                    pass
+
+                # ─── Find and update related booking ──────────
+                try:
+                    booking = Booking.objects.filter(
+                        user=payment.user,
+                        booking_status='Pending',
+                    ).order_by('-booking_date').first()
+
+                    if booking:
+                        booking.booking_status = 'Confirmed'
+                        booking.save()
+                        # Notify client about booking confirmation
+                        notify_booking_status_changed(
+                            payment.user, booking, 'Confirmed'
+                        )
+                except Exception:
+                    pass
+
                 messages.success(
                     request,
-                    f"Payment of Rs. {payment.amount} verified successfully."
+                    f"Payment of Rs. {payment.amount} verified. "
+                    f"Related booking/subscription updated to Confirmed/Active."
                 )
-            else:
-                messages.error(request, "This payment cannot be verified.")
-        except Exception:
-            messages.error(request, "Failed to verify payment. Please try again.")
-        return redirect('payment_list')
+
+            elif action == 'reject':
+                # ─── Mark payment as Failed ───────────────────
+                payment.payment_status = 'Failed'
+                payment.save()
+
+                # ─── Cancel related pending booking ───────────
+                try:
+                    booking = Booking.objects.filter(
+                        user=payment.user,
+                        booking_status='Pending',
+                    ).order_by('-booking_date').first()
+
+                    if booking:
+                        booking.booking_status = 'Cancelled'
+                        booking.save()
+                        notify_booking_status_changed(
+                            payment.user, booking, 'Cancelled'
+                        )
+                except Exception:
+                    pass
+
+                # ─── Cancel related pending subscription ──────
+                try:
+                    subscription = Subscription.objects.get(
+                        user=payment.user,
+                        subs_status='Active',
+                        start_date=payment.payment_date.date(),
+                    )
+                    subscription.subs_status = 'Cancelled'
+                    subscription.save()
+                    notify_membership_cancelled(payment.user, subscription)
+                except Subscription.DoesNotExist:
+                    pass
+                except Exception:
+                    pass
+
+                messages.success(
+                    request,
+                    f"Payment rejected. Related booking/subscription has been cancelled."
+                )
+
+            return redirect('payment_list')
+
+        except Exception as e:
+            messages.error(request, "Failed to process payment action. Please try again.")
+            return redirect('payment_list')
 
     return render(request, 'admin_panel/payments/payment_verify.html', {
         'payment': payment,
+    })
+
+# 9) REPORTS
+@admin_required
+def reports(request):
+    """
+    Generate membership, booking, and trainer performance reports.
+    """
+    try:
+        report_type = request.GET.get('type', 'membership')
+        period = request.GET.get('period', 'all')
+
+        # ─── Date filter ──────────────────────────────
+        from datetime import timedelta
+        today = date.today()
+        if period == 'week':
+            start_filter = today - timedelta(weeks=1)
+        elif period == 'month':
+            start_filter = today - relativedelta(months=1)
+        elif period == '3months':
+            start_filter = today - relativedelta(months=3)
+        else:
+            start_filter = None
+
+        # ─── Membership Report ────────────────────────
+        subscriptions = Subscription.objects.select_related('user', 'plan').all()
+        if start_filter:
+            subscriptions = subscriptions.filter(start_date__gte=start_filter)
+        subscriptions = subscriptions.order_by('-start_date')
+
+        # ─── Booking Report ───────────────────────────
+        bookings = Booking.objects.select_related(
+            'user', 'schedule__trainer__user'
+        ).all()
+        if start_filter:
+            bookings = bookings.filter(booking_date__gte=start_filter)
+        bookings = bookings.order_by('-booking_date')
+
+        # ─── Trainer Performance ─────────────────────
+        trainer_performance = Trainer.objects.select_related('user').annotate(
+            total_bookings=Count('schedules__bookings'),
+            confirmed_bookings=Count(
+                'schedules__bookings',
+                filter=models.Q(schedules__bookings__booking_status='Confirmed')
+            ),
+        ).order_by('-total_bookings')
+
+        # ─── Summary Stats ────────────────────────────
+        total_revenue = Payment.objects.filter(
+            payment_status='Completed'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        if start_filter:
+            period_revenue = Payment.objects.filter(
+                payment_status='Completed',
+                payment_date__gte=start_filter
+            ).aggregate(total=Sum('amount'))['total'] or 0
+        else:
+            period_revenue = total_revenue
+
+    except Exception as e:
+        subscriptions = bookings = trainer_performance = []
+        total_revenue = period_revenue = 0
+        messages.error(request, "Failed to generate reports.")
+
+    # Paginate report data
+    if report_type == 'membership':
+        data = paginate(subscriptions, request, 15)
+    elif report_type == 'booking':
+        data = paginate(bookings, request, 15)
+    else:
+        data = paginate(trainer_performance, request, 15)
+
+    return render(request, 'admin_panel/reports.html', {
+        'report_type': report_type,
+        'period': period,
+        'data': data,
+        'subscriptions': subscriptions,
+        'bookings': bookings,
+        'trainer_performance': trainer_performance,
+        'total_revenue': total_revenue,
+        'period_revenue': period_revenue,
     })

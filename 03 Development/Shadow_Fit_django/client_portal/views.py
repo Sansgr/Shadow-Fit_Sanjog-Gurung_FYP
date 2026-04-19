@@ -6,11 +6,11 @@ from django.conf import settings as django_settings
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from client_portal.decorators import member_required
 from client_portal.forms import CustomPasswordChangeForm, ProfileUpdateForm
 from gym.models import Booking, MembershipPlan, Notification, Schedule, Trainer, Subscription, Payment
-
 from client_portal.notifications import (
     notify_membership_purchased,
     notify_membership_hold,
@@ -137,13 +137,48 @@ def update_profile(request):
 # a) MEMBERSHIP LIST
 # Public — shows all plans, highlights active subscription if any
 def membership_list(request):
+    """
+    Public — shows all plans with search and pagination.
+    """
     try:
         plans = MembershipPlan.objects.all().order_by('price')
-    except Exception as e:
+    except Exception:
         plans = []
         messages.error(request, "Failed to load membership plans.")
 
-    # Check if authenticated user has active/on hold subscription
+    # ─── Search/Filter ────────────────────────────────
+    search = request.GET.get('search', '')
+    min_price = request.GET.get('min_price', '')
+    max_price = request.GET.get('max_price', '')
+    duration = request.GET.get('duration', '')
+
+    if search:
+        plans = plans.filter(plan_name__icontains=search)
+    if min_price:
+        try:
+            plans = plans.filter(price__gte=float(min_price))
+        except ValueError:
+            pass
+    if max_price:
+        try:
+            plans = plans.filter(price__lte=float(max_price))
+        except ValueError:
+            pass
+    if duration:
+        try:
+            plans = plans.filter(duration=int(duration))
+        except ValueError:
+            pass
+
+    # ─── Pagination ───────────────────────────────────
+    paginator = Paginator(plans, 6)  # 6 plans per page
+    page = request.GET.get('page', 1)
+    try:
+        plans_page = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        plans_page = paginator.page(1)
+
+    # Check subscription status
     active_subscription = None
     if request.user.is_authenticated:
         try:
@@ -152,13 +187,17 @@ def membership_list(request):
                 subs_status__in=['Active', 'On Hold']
             )
         except Subscription.DoesNotExist:
-            pass  # No active subscription — normal case
-        except Exception as e:
+            pass
+        except Exception:
             messages.error(request, "Failed to load subscription status.")
 
     return render(request, 'client_portal/membership/membership_list.html', {
-        'plans': plans,
+        'plans': plans_page,
         'active_subscription': active_subscription,
+        'search': search,
+        'min_price': min_price,
+        'max_price': max_price,
+        'duration': duration,
     })
 
 
@@ -384,20 +423,40 @@ def membership_khalti_verify(request, pk):
 # Shows client's current subscription details
 @member_required
 def my_membership(request):
+    """
+    Shows current subscription and history of past subscriptions.
+    """
     subscription = None
     try:
-        # Fetch active or on-hold subscription
         subscription = Subscription.objects.select_related('plan').get(
             user=request.user,
             subs_status__in=['Active', 'On Hold']
         )
     except Subscription.DoesNotExist:
-        pass  # No subscription — handled in template
-    except Exception as e:
+        pass
+    except Exception:
         messages.error(request, "Failed to load membership details.")
+
+    # ─── History: past cancelled/expired subscriptions ─
+    try:
+        history = Subscription.objects.select_related('plan').filter(
+            user=request.user,
+            subs_status__in=['Cancelled', 'Expired']
+        ).order_by('-end_date')
+    except Exception:
+        history = []
+
+    # Paginate history
+    paginator = Paginator(history, 5)
+    page = request.GET.get('history_page', 1)
+    try:
+        history_page = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        history_page = paginator.page(1)
 
     return render(request, 'client_portal/membership/my_membership.html', {
         'subscription': subscription,
+        'history': history_page,
     })
 
 
@@ -527,14 +586,56 @@ def cancel_membership(request):
 # a) TRAINER LIST
 # Public — shows all trainers with their shifts
 def trainer_list(request):
+    """
+    Public — shows all trainers with search, filter and pagination.
+    """
     try:
         trainers = Trainer.objects.select_related('user').prefetch_related('schedules').all()
-    except Exception as e:
+    except Exception:
         trainers = []
         messages.error(request, "Failed to load trainers.")
 
+    # ─── Search/Filter ────────────────────────────────
+    search = request.GET.get('search', '')
+    specialty = request.GET.get('specialty', '')
+    shift = request.GET.get('shift', '')
+
+    if search:
+        trainers = trainers.filter(
+            user__first_name__icontains=search
+        ) | trainers.filter(
+            user__last_name__icontains=search
+        ) | trainers.filter(
+            specialty__icontains=search
+        )
+    if specialty:
+        trainers = trainers.filter(specialty__icontains=specialty)
+    if shift:
+        trainers = trainers.filter(schedules__shift_name=shift).distinct()
+
+    # Get unique specialties for filter dropdown
+    try:
+        all_specialties = Trainer.objects.values_list(
+            'specialty', flat=True
+        ).distinct().order_by('specialty')
+    except Exception:
+        all_specialties = []
+
+    # ─── Pagination ───────────────────────────────────
+    paginator = Paginator(trainers, 6)  # 6 trainers per page
+    page = request.GET.get('page', 1)
+    try:
+        trainers_page = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        trainers_page = paginator.page(1)
+
     return render(request, 'client_portal/trainers/trainer_list.html', {
-        'trainers': trainers,
+        'trainers': trainers_page,
+        'search': search,
+        'specialty': specialty,
+        'shift': shift,
+        'all_specialties': all_specialties,
+        'shift_choices': ['Morning', 'Day', 'Evening'],
     })
 
 
@@ -616,6 +717,7 @@ def booking_cash_payment(request, schedule_pk):
             messages.error(request, "Please select duration and start date.")
             return redirect('booking_checkout', schedule_pk=schedule_pk)
 
+        booking = None
         try:
             # Parse date string to date object
             start = datetime.strptime(start_date, '%Y-%m-%d').date()
@@ -632,7 +734,7 @@ def booking_cash_payment(request, schedule_pk):
             )
 
             # Create booking as Pending until admin/trainer confirms
-            Booking.objects.create(
+            booking = Booking.objects.create(
                 user=request.user,
                 schedule=schedule,
                 duration=duration,
@@ -642,8 +744,9 @@ def booking_cash_payment(request, schedule_pk):
             )
 
             # Notify client and admin about new booking
-            notify_booking_created(request.user, booking)
-            
+            if booking:
+                notify_booking_created(request.user, booking)
+
             messages.success(
                 request,
                 f"Booking submitted! Please pay Rs. {amount} at the front desk."
@@ -779,8 +882,9 @@ def booking_khalti_verify(request, schedule_pk):
                         payment_status='Completed',
                     )
 
+                    booking = None
                     # Create booking — online payment = auto Confirmed
-                    Booking.objects.create(
+                    booking = Booking.objects.create(
                         user=request.user,
                         schedule=schedule,
                         duration=duration,
@@ -790,7 +894,8 @@ def booking_khalti_verify(request, schedule_pk):
                     )
                     
                     # Notify client and admin
-                    notify_booking_created(request.user, booking)
+                    if booking:
+                        notify_booking_created(request.user, booking)
 
                     # Clear session data safely
                     request.session.pop('booking_duration', None)
@@ -815,16 +920,43 @@ def booking_khalti_verify(request, schedule_pk):
 # Shows all bookings for the logged-in client
 @member_required
 def my_bookings(request):
+    """
+    Shows active bookings and booking history with pagination.
+    """
     try:
-        bookings = Booking.objects.select_related(
+        # Active bookings — Pending or Confirmed
+        active_bookings = Booking.objects.select_related(
             'schedule__trainer__user'
-        ).filter(user=request.user).order_by('-booking_date')
-    except Exception as e:
-        bookings = []
+        ).filter(
+            user=request.user,
+            booking_status__in=['Pending', 'Confirmed']
+        ).order_by('-booking_date')
+    except Exception:
+        active_bookings = []
         messages.error(request, "Failed to load bookings.")
 
+    try:
+        # History — Cancelled or Completed
+        history = Booking.objects.select_related(
+            'schedule__trainer__user'
+        ).filter(
+            user=request.user,
+            booking_status__in=['Cancelled', 'Completed']
+        ).order_by('-booking_date')
+    except Exception:
+        history = []
+
+    # Paginate history
+    paginator = Paginator(history, 5)
+    page = request.GET.get('history_page', 1)
+    try:
+        history_page = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        history_page = paginator.page(1)
+
     return render(request, 'client_portal/trainers/my_bookings.html', {
-        'bookings': bookings,
+        'bookings': active_bookings,
+        'history': history_page,
     })
 
 
@@ -903,3 +1035,62 @@ def get_unread_count(request):
             except Exception:
                 return 0
     return 0
+
+
+# 6) STATIC PAGES
+# a) ABOUT US
+def about_us(request):
+    """Static about us page."""
+    return render(request, 'client_portal/about.html')
+
+# b) CONTACT US
+def contact_us(request):
+    """
+    Contact us page — handles inquiry form submission.
+    """
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        subject = request.POST.get('subject', '').strip()
+        message = request.POST.get('message', '').strip()
+
+        if not all([name, email, subject, message]):
+            messages.error(request, "Please fill in all fields.")
+            return render(request, 'client_portal/contact.html')
+
+        try:
+            # Send inquiry email to admin
+            from client_portal.notifications import send_email, get_admin_emails
+            inquiry_message = (
+                f"New Contact Inquiry\n\n"
+                f"Name: {name}\n"
+                f"Email: {email}\n"
+                f"Subject: {subject}\n\n"
+                f"Message:\n{message}"
+            )
+            for admin_email in get_admin_emails():
+                send_email(
+                    subject=f"Shadow Fit — Contact Inquiry: {subject}",
+                    message=inquiry_message,
+                    recipient_email=admin_email,
+                )
+
+            # Save to Inquiry model if user is logged in
+            if request.user.is_authenticated:
+                from gym.models import Inquiry
+                Inquiry.objects.create(
+                    user=request.user,
+                    subject=subject,
+                    message=message,
+                )
+
+            messages.success(
+                request,
+                "Your message has been sent! We'll get back to you soon."
+            )
+            return redirect('contact_us')
+
+        except Exception as e:
+            messages.error(request, "Failed to send message. Please try again.")
+
+    return render(request, 'client_portal/contact.html')

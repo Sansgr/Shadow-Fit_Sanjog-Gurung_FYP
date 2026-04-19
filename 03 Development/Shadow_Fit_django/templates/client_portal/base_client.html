@@ -32,11 +32,23 @@
                     class="{% if 'trainer' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="bi bi-person-badge"></i> Trainers
                 </a>
+                <a href="{% url 'contact_us' %}"
+                    class="{% if request.resolver_match.url_name == 'contact_us' %}active{% endif %}">
+                    <i class="bi bi-envelope"></i> Contact
+                </a>
+                <a href="{% url 'about_us' %}"
+                    class="{% if request.resolver_match.url_name == 'about_us' %}active{% endif %}">
+                    <i class="bi bi-info-circle"></i> About Us
+                </a>
             </div>
 
             <!-- Right side -->
             <div class="client-nav-right">
                 {% if request.user.is_authenticated %}
+                    <!-- Dark/Light Theme Toggle -->
+                    <button id="themeToggle" class="theme-toggle-btn" title="Toggle Dark/Light Mode">
+                        <i class="bi bi-moon-fill" id="themeIcon"></i>
+                    </button>
                     <!-- Notification Bell -->
                     <a href="{% url 'notifications_list' %}" class="notification-bell">
                         <i class="bi bi-bell-fill"></i>
@@ -108,8 +120,10 @@
             </div>
             <div class="footer-links">
                 <a href="{% url 'client_dashboard' %}">Home</a>
-                <a href="#">Membership</a>
-                <a href="#">Trainers</a>
+                <a href="{% url 'membership_list' %}">Membership</a>
+                <a href="{% url 'trainer_list' %}">Trainers</a>
+                <a href="{% url 'about_us' %}">About Us</a>
+                <a href="{% url 'contact_us' %}">Contact</a>
             </div>
             <div class="footer-copy">
                 &copy; 2025 <strong>Shadow Fit</strong>. All rights reserved.
@@ -129,6 +143,30 @@
                 setTimeout(() => messages.remove(), 500);
             }
         }, 3000);
+
+        // ─── Dark/Light Mode ──────────────────────────────
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+
+        // Load saved theme on page load
+        const savedTheme = localStorage.getItem('shadowfit-theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+        updateIcon(savedTheme);
+
+        themeToggle.addEventListener('click', function() {
+            const current = html.getAttribute('data-theme');
+            const next = current === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('shadowfit-theme', next);
+            updateIcon(next);
+        });
+
+        function updateIcon(theme) {
+            themeIcon.className = theme === 'dark'
+                ? 'bi bi-sun-fill'
+                : 'bi bi-moon-fill';
+        }
     </script>
 </body>
 </html>
