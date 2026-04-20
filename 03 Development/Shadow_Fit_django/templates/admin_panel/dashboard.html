@@ -13,9 +13,10 @@
 {{ booking_labels|json_script:"booking-labels" }}
 {{ booking_counts|json_script:"booking-counts" }}
 
-<!-- ─── Stat Cards ──────────────────────────── -->
+<!-- Stat Cards  -->
 <div class="row g-4 mb-4">
-    <div class="col-xl-2 col-md-4">
+    <!-- Row 1 -->
+    <div class="col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon bg-blue">
                 <i class="bi bi-people-fill"></i>
@@ -26,7 +27,7 @@
             </div>
         </div>
     </div>
-    <div class="col-xl-2 col-md-4">
+    <div class="col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon bg-green">
                 <i class="bi bi-person-badge-fill"></i>
@@ -37,7 +38,7 @@
             </div>
         </div>
     </div>
-    <div class="col-xl-2 col-md-4">
+    <div class="col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon bg-orange">
                 <i class="bi bi-journal-check"></i>
@@ -48,18 +49,20 @@
             </div>
         </div>
     </div>
-    <div class="col-xl-2 col-md-4">
+
+    <!-- Row 2 -->
+    <div class="col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon bg-purple">
                 <i class="bi bi-card-checklist"></i>
             </div>
             <div class="stat-info">
                 <h3>{{ active_subscriptions }}</h3>
-                <p>Active Subs</p>
+                <p>Active Subscriptions</p>
             </div>
         </div>
     </div>
-    <div class="col-xl-2 col-md-4">
+    <div class="col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon" style="background:#e67e22;">
                 <i class="bi bi-clock-history"></i>
@@ -70,7 +73,7 @@
             </div>
         </div>
     </div>
-    <div class="col-xl-2 col-md-4">
+    <div class="col-md-4">
         <div class="admin-stat-card">
             <div class="stat-icon" style="background:#27ae60;">
                 <i class="bi bi-currency-rupee"></i>

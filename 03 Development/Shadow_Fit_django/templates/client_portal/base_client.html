@@ -105,6 +105,32 @@
         </div>
     {% endif %}
 
+    <!-- Session Expiry Popup -->
+    <div id="sessionPopup" style="display:none; position:fixed; inset:0;
+        background:rgba(0,0,0,0.6); z-index:99999;
+        align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:16px; padding:40px;
+            max-width:400px; width:90%; text-align:center;
+            box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <i class="bi bi-clock-history"
+                style="font-size:48px; color:#e74c3c; display:block; margin-bottom:16px;">
+            </i>
+            <h5 style="font-size:20px; font-weight:700; margin-bottom:8px;">
+                Session Expired
+            </h5>
+            <p style="color:#666; font-size:14px; margin-bottom:24px;">
+                Your session has expired due to inactivity.
+                You have been logged out.
+            </p>
+            <a href="{% url 'login' %}"
+                style="background:#20c05c; color:#fff; padding:10px 28px;
+                    border-radius:8px; text-decoration:none; font-size:14px;
+                    font-weight:500; display:inline-block;">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Login Again
+            </a>
+        </div>
+    </div>
+
     <!-- MAIN CONTENT -->
     <main class="client-main">
         {% block content %}
@@ -131,6 +157,9 @@
         </div>
     </footer>
     
+    {{ session_age_ms|default:0|json_script:"session-age" }}
+    {{ request.user.role|default:""|json_script:"user-role" }}
+    {{ request.user.is_authenticated|yesno:"true,false"|json_script:"is-auth" }}
     <script>
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
 
@@ -143,6 +172,35 @@
                 setTimeout(() => messages.remove(), 500);
             }
         }, 3000);
+
+        // Session expiry auto-logout
+        const sessionAge = JSON.parse(document.getElementById('session-age').textContent);
+        const userRole = JSON.parse(document.getElementById('user-role').textContent);
+        const isAuth = JSON.parse(document.getElementById('is-auth').textContent);
+
+        if (isAuth && userRole === "Member") {
+            (function () {
+                let lastActivity = Date.now();
+                ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (evt) {
+                    document.addEventListener(evt, function () {
+                        lastActivity = Date.now();
+                    }, { passive: true });
+                });
+
+                setInterval(function () {
+                    const elapsed = Date.now() - lastActivity;
+                    if (elapsed >= sessionAge && sessionAge > 0) {
+                        const popup = document.getElementById('sessionPopup');
+                        if (popup) {
+                            popup.style.display = 'flex';
+                        }
+                        setTimeout(function () {
+                            window.location.href = "/logout/";
+                        }, 3000);
+                    }
+                }, 10000);
+            })();
+        }
 
         // ─── Dark/Light Mode ──────────────────────────────
         const themeToggle = document.getElementById('themeToggle');

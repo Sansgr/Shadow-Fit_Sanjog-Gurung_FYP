@@ -1,0 +1,163 @@
+{% extends "trainer_portal/base_trainer.html" %}
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+    <!-- Left: Profile Card -->
+    <div class="col-md-3">
+        <div class="trainer-card p-4 text-center">
+            <div style="width:90px; height:90px; border-radius:50%; overflow:hidden;
+                margin:0 auto 16px; border:3px solid var(--green);">
+                {% if request.user.photo %}
+                    <img src="{{ request.user.photo.url }}"
+                        style="width:100%; height:100%; object-fit:cover;">
+                {% else %}
+                    <div style="width:100%; height:100%; background:var(--trainer-dark);
+                        display:flex; align-items:center; justify-content:center;
+                        font-size:36px; color:rgba(255,255,255,0.3);">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <h5 style="font-weight:700; margin-bottom:4px;">
+                {{ request.user.get_full_name }}
+            </h5>
+            <span style="background:rgba(32,192,92,0.12); color:var(--green);
+                padding:3px 12px; border-radius:20px; font-size:12px; font-weight:600;">
+                Trainer
+            </span>
+            <p style="color:var(--text-muted); font-size:13px; margin-top:8px;">
+                @{{ request.user.username }}
+            </p>
+
+            {% if trainer %}
+            <div style="background:#f8f9fa; border-radius:10px;
+                padding:14px; margin-top:16px; text-align:left;">
+                <p style="font-size:13px; margin-bottom:6px;">
+                    <strong>Specialty:</strong> {{ trainer.specialty }}
+                </p>
+                <p style="font-size:13px; margin-bottom:6px;">
+                    <strong>Experience:</strong> {{ trainer.experience }} yrs
+                </p>
+                <p style="font-size:13px; margin:0;">
+                    <strong>Session Price:</strong> Rs. {{ trainer.session_price }}/week
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right: Forms -->
+    <div class="col-md-9">
+
+        <!-- Personal Info Form -->
+        <div class="trainer-card p-4 mb-4">
+            <h6 style="font-size:15px; font-weight:600; margin-bottom:20px;
+                padding-bottom:12px; border-bottom:2px solid var(--bg);">
+                <i class="bi bi-person me-2"></i>Personal Information
+            </h6>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="profile">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label style="font-size:14px; font-weight:500;
+                            margin-bottom:5px; display:block;">First Name</label>
+                        <input type="text" name="first_name"
+                            value="{{ request.user.first_name }}"
+                            style="width:100%; padding:10px 14px; border:1px solid #dde1e7;
+                                border-radius:8px; font-size:14px;" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label style="font-size:14px; font-weight:500;
+                            margin-bottom:5px; display:block;">Last Name</label>
+                        <input type="text" name="last_name"
+                            value="{{ request.user.last_name }}"
+                            style="width:100%; padding:10px 14px; border:1px solid #dde1e7;
+                                border-radius:8px; font-size:14px;">
+                    </div>
+                    <div class="col-md-6">
+                        <label style="font-size:14px; font-weight:500;
+                            margin-bottom:5px; display:block;">Email</label>
+                        <input type="email" name="email"
+                            value="{{ request.user.email }}"
+                            style="width:100%; padding:10px 14px; border:1px solid #dde1e7;
+                                border-radius:8px; font-size:14px;" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label style="font-size:14px; font-weight:500;
+                            margin-bottom:5px; display:block;">Phone</label>
+                        <input type="text" name="phone"
+                            value="{{ request.user.phone }}"
+                            style="width:100%; padding:10px 14px; border:1px solid #dde1e7;
+                                border-radius:8px; font-size:14px;">
+                    </div>
+                    <div class="col-md-12">
+                        <label style="font-size:14px; font-weight:500;
+                            margin-bottom:5px; display:block;">Profile Photo</label>
+                        {% if request.user.photo %}
+                        <div style="margin-bottom:8px;">
+                            <img src="{{ request.user.photo.url }}"
+                                style="width:50px; height:50px; border-radius:50%;
+                                    object-fit:cover; border:2px solid var(--green);">
+                            <span style="font-size:13px; color:var(--text-muted);
+                                margin-left:8px;">Current photo</span>
+                        </div>
+                        {% endif %}
+                        <input type="file" name="photo" accept="image/*"
+                            style="width:100%; padding:8px 14px; border:1px solid #dde1e7;
+                                border-radius:8px; font-size:14px;">
+                    </div>
+                </div>
+                <button type="submit" class="trainer-btn-success mt-4">
+                    <i class="bi bi-check-lg"></i> Save Changes
+                </button>
+            </form>
+        </div>
+
+        <!-- Password Change Form -->
+        <div class="trainer-card p-4">
+            <h6 style="font-size:15px; font-weight:600; margin-bottom:20px;
+                padding-bottom:12px; border-bottom:2px solid var(--bg);">
+                <i class="bi bi-shield-lock me-2"></i>Change Password
+            </h6>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="password">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label style="font-size:14px; font-weight:500;
+                            margin-bottom:5px; display:block;">Current Password</label>
+                        <input type="password" name="old_password"
+                            placeholder="Enter current password"
+                            style="width:100%; padding:10px 14px; border:1px solid #dde1e7;
+                                border-radius:8px; font-size:14px;" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label style="font-size:14px; font-weight:500;
+                            margin-bottom:5px; display:block;">New Password</label>
+                        <input type="password" name="new_password1"
+                            placeholder="Enter new password"
+                            style="width:100%; padding:10px 14px; border:1px solid #dde1e7;
+                                border-radius:8px; font-size:14px;" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label style="font-size:14px; font-weight:500;
+                            margin-bottom:5px; display:block;">Confirm New Password</label>
+                        <input type="password" name="new_password2"
+                            placeholder="Confirm new password"
+                            style="width:100%; padding:10px 14px; border:1px solid #dde1e7;
+                                border-radius:8px; font-size:14px;" required>
+                    </div>
+                </div>
+                <button type="submit" class="trainer-btn-success mt-4">
+                    <i class="bi bi-shield-check"></i> Update Password
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

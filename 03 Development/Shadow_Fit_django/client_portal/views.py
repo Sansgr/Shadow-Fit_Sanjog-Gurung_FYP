@@ -1183,18 +1183,30 @@ def trainer_reviews(request, trainer_pk):
             trainer=trainer
         ).order_by('-date_given')
 
-        # Calculate average rating
-        avg_rating = feedbacks.aggregate(
-            avg=models.Avg('rating')
-        )['avg'] or 0
-        avg_rating = round(avg_rating, 1)
+        # Calculate average rating before paginating
+        from django.db.models import Avg
+        avg_data = feedbacks.aggregate(avg=Avg('rating'))
+        avg_rating = round(float(avg_data['avg']), 1) if avg_data['avg'] else 0
+        total_reviews = feedbacks.count()
 
-    except Exception:
+    except Exception as e:
+        import traceback
+        print(f"[Trainer Reviews Error] {e}")
+        print(traceback.format_exc())
         messages.error(request, "Failed to load reviews.")
         return redirect('trainer_list')
 
+    # Paginate after counting
+    paginator = Paginator(feedbacks, 5)
+    page = request.GET.get('page', 1)
+    try:
+        feedbacks_page = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        feedbacks_page = paginator.page(1)
+
     return render(request, 'client_portal/trainers/trainer_reviews.html', {
         'trainer': trainer,
-        'feedbacks': feedbacks,
+        'feedbacks': feedbacks_page,
         'avg_rating': avg_rating,
+        'total_reviews': total_reviews,
     })

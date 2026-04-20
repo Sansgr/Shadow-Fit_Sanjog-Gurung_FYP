@@ -1,3 +1,4 @@
+from django.conf import settings
 from gym.models import Notification
 
 
@@ -17,4 +18,10 @@ def notification_count(request):
     except Exception:
         pass  # Silently fail — don't break page if DB issue
 
-    return {'unread_notification_count': unread_count}
+    # Pass session age in milliseconds for JS countdown
+    session_age_ms = getattr(settings, 'SESSION_COOKIE_AGE', 120) * 1000
+
+    return {
+        'unread_notification_count': unread_count,
+        'session_age_ms': session_age_ms,
+    }

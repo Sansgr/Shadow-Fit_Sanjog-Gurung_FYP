@@ -24,14 +24,38 @@
                 <span class="brand-label">Admin</span>
             </a>
         </div>
-        <div class="admin-navbar-right">
-            <span class="admin-welcome">
-                <i class="bi bi-person-circle me-1"></i>
-                {{ request.user.first_name }} {{ request.user.last_name }}
-            </span>
-            <a href="{% url 'logout' %}" class="admin-logout-btn">
-                <i class="bi bi-box-arrow-right me-1"></i>Logout
-            </a>
+
+        <!-- Dropdown for Admin Profile Management -->
+        <div style="position:relative;" id="adminProfileWrapper">
+            <button style="background:none; border:none; cursor:pointer;
+                display:flex; align-items:center; gap:8px; color:rgba(255,255,255,0.85);
+                font-size:14px;" id="adminProfileBtn">
+                {% if request.user.photo %}
+                    <img src="{{ request.user.photo.url }}"
+                        style="width:30px; height:30px; border-radius:50%;
+                            object-fit:cover; border:2px solid var(--green);">
+                {% else %}
+                    <i class="bi bi-person-circle" style="font-size:20px;"></i>
+                {% endif %}
+                {{ request.user.first_name }}
+                <i class="bi bi-chevron-down" style="font-size:11px;"></i>
+            </button>
+            <div id="adminProfileMenu" style="display:none; position:absolute;
+                top:calc(100% + 10px); right:0; background:#fff; border-radius:10px;
+                min-width:180px; box-shadow:0 10px 30px rgba(0,0,0,0.15);
+                overflow:hidden; z-index:9999;">
+                <a href="{% url 'admin_profile' %}"
+                    style="display:flex; align-items:center; gap:10px; padding:12px 16px;
+                        color:#1a1a2e; text-decoration:none; font-size:14px; transition:0.15s;">
+                    <i class="bi bi-person-gear" style="color:#666;"></i> My Profile
+                </a>
+                <div style="height:1px; background:#f0f0f0;"></div>
+                <a href="{% url 'logout' %}"
+                    style="display:flex; align-items:center; gap:10px; padding:12px 16px;
+                        color:#dc3545; text-decoration:none; font-size:14px; transition:0.15s;">
+                    <i class="bi bi-box-arrow-right" style="color:#dc3545;"></i> Logout
+                </a>
+            </div>
         </div>
     </nav>
 
@@ -50,8 +74,16 @@
                     </a>
                 </li>
 
-                <li class="sidebar-heading">Management</li>
+                <!-- "Administration" section -->
+                <li class="sidebar-heading">Administration</li>
+                <li>
+                    <a href="{% url 'admin_add' %}"
+                        class="{% if request.resolver_match.url_name == 'admin_add' %}active{% endif %}">
+                        <i class="bi bi-person-plus"></i> Add Admin
+                    </a>
+                </li>
 
+                <li class="sidebar-heading">Management</li>
                 <li>
                     <a href="{% url 'client_list' %}"
                         class="{% if 'client' in request.resolver_match.url_name %}active{% endif %}">
@@ -154,6 +186,37 @@
             document.getElementById('adminSidebar').classList.toggle('collapsed');
             document.querySelector('.admin-main').classList.toggle('expanded');
         });
+
+        // Auto-dismiss admin alert messages after 3 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.admin-alert');
+            alerts.forEach(function(alert) {
+                alert.style.transition = 'opacity 0.5s, max-height 0.5s';
+                alert.style.opacity = '0';
+                alert.style.maxHeight = '0';
+                alert.style.overflow = 'hidden';
+                alert.style.marginBottom = '0';
+                alert.style.padding = '0';
+                setTimeout(function() {
+                    alert.remove();
+                }, 500);
+            });
+        }, 3000);
+
+        // Admin profile dropdown toggle
+        const adminProfileBtn = document.getElementById('adminProfileBtn');
+        const adminProfileMenu = document.getElementById('adminProfileMenu');
+
+        if (adminProfileBtn) {
+            adminProfileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isVisible = adminProfileMenu.style.display === 'block';
+                adminProfileMenu.style.display = isVisible ? 'none' : 'block';
+            });
+            document.addEventListener('click', function() {
+                if (adminProfileMenu) adminProfileMenu.style.display = 'none';
+            });
+        }
     </script>
 </body>
 </html>

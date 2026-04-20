@@ -7,6 +7,8 @@ from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from accounts import models
@@ -122,6 +124,112 @@ def admin_dashboard(request):
         'sub_labels': sub_labels,
         'sub_counts': sub_counts,
     })
+
+# b) Admin Profile
+@admin_required
+def admin_profile(request):
+    """
+    Admin views and updates their own profile.
+    """
+    if request.method == 'POST':
+        form_type = request.POST.get('form_type')
+
+        if form_type == 'profile':
+            # Update personal info
+            try:
+                user = request.user
+                user.first_name = request.POST.get('first_name', '').strip()
+                user.last_name = request.POST.get('last_name', '').strip()
+                user.email = request.POST.get('email', '').strip()
+                user.phone = request.POST.get('phone', '').strip()
+
+                # Handle photo upload
+                if request.FILES.get('photo'):
+                    user.photo = request.FILES['photo']
+
+                user.save()
+                messages.success(request, "Profile updated successfully!")
+            except Exception:
+                messages.error(request, "Failed to update profile. Please try again.")
+
+        elif form_type == 'password':
+            # Change password
+            old_password = request.POST.get('old_password')
+            new_password1 = request.POST.get('new_password1')
+            new_password2 = request.POST.get('new_password2')
+
+            if not request.user.check_password(old_password):
+                messages.error(request, "Current password is incorrect.")
+            elif new_password1 != new_password2:
+                messages.error(request, "New passwords do not match.")
+            elif len(new_password1) < 8:
+                messages.error(request, "Password must be at least 8 characters.")
+            else:
+                try:
+                    request.user.set_password(new_password1)
+                    request.user.save()
+                    update_session_auth_hash(request, request.user)
+                    messages.success(request, "Password updated successfully!")
+                except Exception:
+                    messages.error(request, "Failed to update password.")
+
+        return redirect('admin_profile')
+
+    return render(request, 'admin_panel/profile.html')
+
+# c) ADD NEW ADMIN
+@admin_required
+def admin_add(request):
+    """
+    Admin can create new admin accounts.
+    """
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        password = request.POST.get('password', '').strip()
+
+        # Validate
+        if not all([first_name, username, email, password]):
+            messages.error(request, "Please fill in all required fields.")
+            return render(request, 'admin_panel/admin_add.html')
+
+        if CustomUser.objects.filter(username=username).exists():
+            messages.error(request, "Username already taken.")
+            return render(request, 'admin_panel/admin_add.html')
+
+        if CustomUser.objects.filter(email=email).exists():
+            messages.error(request, "Email already registered.")
+            return render(request, 'admin_panel/admin_add.html')
+
+        try:
+            new_admin = CustomUser.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                phone=phone,
+            )
+            new_admin.role = 'Admin'
+            new_admin.is_staff = True    # Admin has staff access
+            new_admin.save()
+
+            # Notify new admin via email
+            from client_portal.notifications import notify_account_created
+            notify_account_created(new_admin, password)
+
+            messages.success(
+                request,
+                f"Admin account for {new_admin.get_full_name()} created successfully!"
+            )
+            return redirect('admin_dashboard')
+        except Exception as e:
+            messages.error(request, "Failed to create admin. Please try again.")
+
+    return render(request, 'admin_panel/admin_add.html')
 
 
 # 2) CLIENT MANAGEMENT VIEWS
@@ -260,6 +368,7 @@ def trainer_add(request):
             # Save user first
             user = user_form.save(commit=False)
             user.role = 'Trainer'
+            user.is_staff = True
             user.set_password(f"{user_form.cleaned_data.get('username')}@123")
             user.save()
             # Save trainer profile

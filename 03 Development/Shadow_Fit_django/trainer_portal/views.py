@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from trainer_portal.decorators import trainer_required
@@ -73,7 +74,65 @@ def trainer_dashboard(request):
     })
 
 
-# 2) BOOKINGS MANAGEMENT
+# 2) TRAINER PROFILE MANAGEMENT
+@trainer_required
+def trainer_profile(request):
+    """
+    Trainer views and updates their own profile.
+    Also shows their trainer-specific info.
+    """
+    try:
+        trainer = get_object_or_404(Trainer, user=request.user)
+    except Exception:
+        trainer = None
+
+    if request.method == 'POST':
+        form_type = request.POST.get('form_type')
+
+        if form_type == 'profile':
+            try:
+                user = request.user
+                user.first_name = request.POST.get('first_name', '').strip()
+                user.last_name = request.POST.get('last_name', '').strip()
+                user.email = request.POST.get('email', '').strip()
+                user.phone = request.POST.get('phone', '').strip()
+
+                if request.FILES.get('photo'):
+                    user.photo = request.FILES['photo']
+
+                user.save()
+                messages.success(request, "Profile updated successfully!")
+            except Exception:
+                messages.error(request, "Failed to update profile.")
+
+        elif form_type == 'password':
+            old_password = request.POST.get('old_password')
+            new_password1 = request.POST.get('new_password1')
+            new_password2 = request.POST.get('new_password2')
+
+            if not request.user.check_password(old_password):
+                messages.error(request, "Current password is incorrect.")
+            elif new_password1 != new_password2:
+                messages.error(request, "New passwords do not match.")
+            elif len(new_password1) < 8:
+                messages.error(request, "Password must be at least 8 characters.")
+            else:
+                try:
+                    request.user.set_password(new_password1)
+                    request.user.save()
+                    update_session_auth_hash(request, request.user)
+                    messages.success(request, "Password updated successfully!")
+                except Exception:
+                    messages.error(request, "Failed to update password.")
+
+        return redirect('trainer_profile')
+
+    return render(request, 'trainer_portal/profile.html', {
+        'trainer': trainer,
+    })
+
+
+# 3) BOOKINGS MANAGEMENT
 # Trainer can view, accept and reject bookings
 @trainer_required
 def trainer_bookings(request):
@@ -109,7 +168,7 @@ def trainer_bookings(request):
     })
 
 
-# 3) ACCEPT BOOKING
+# 4) ACCEPT BOOKING
 # Changes booking status from Pending to Confirmed
 @trainer_required
 def accept_booking(request, pk):
@@ -152,7 +211,7 @@ def accept_booking(request, pk):
 
 
 
-# 4) REJECT BOOKING
+# 5) REJECT BOOKING
 # Changes booking status from Pending to Cancelled
 @trainer_required
 def reject_booking(request, pk):
@@ -194,7 +253,7 @@ def reject_booking(request, pk):
 
 
 
-# 5) TRAINER REVIEWS
+# 6) TRAINER REVIEWS
 # View all reviews/feedback received
 @trainer_required
 def trainer_reviews(request):
@@ -228,7 +287,7 @@ def trainer_reviews(request):
 
 
 
-# 6) TRAINER SCHEDULE
+# 7) TRAINER SCHEDULE
 # View own schedules/shifts
 @trainer_required
 def trainer_schedule(request):

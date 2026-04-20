@@ -5,6 +5,10 @@ urlpatterns = [
     # Admin Dashboard
     path('', views.admin_dashboard, name='admin_dashboard'),
 
+    # Admin Profile
+    path('profile/', views.admin_profile, name='admin_profile'),
+    path('admins/add/', views.admin_add, name='admin_add'),
+
     # Client URLs
     path('clients/', views.client_list, name='client_list'),
     path('clients/add/', views.client_add, name='client_add'),

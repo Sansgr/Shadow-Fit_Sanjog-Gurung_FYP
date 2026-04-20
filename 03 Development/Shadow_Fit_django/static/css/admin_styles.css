@@ -133,14 +133,19 @@ body {
 .admin-sidebar {
     width: var(--sidebar-w);
     background: var(--navy);
-    min-height: 100%;
     position: fixed;
     top: var(--navbar-h);
     left: 0;
-    bottom: 48px;
+    bottom: 0;              /* extend to bottom of screen */
     overflow-y: auto;
     transition: width 0.3s;
     z-index: 999;
+    padding-bottom: 60px;   /* prevent content hiding behind footer */
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 15px 0 20px 0;
 }
 
 .admin-sidebar.collapsed {
@@ -190,6 +195,23 @@ body {
     font-size: 16px;
     width: 20px;
     text-align: center;
+}
+/* Styled scrollbar for sidebar */
+.admin-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.admin-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.4);
 }
 
 /* ─── MAIN CONTENT ───────────────────────────────── */
@@ -544,6 +566,22 @@ body {
 }
 
 .admin-select:focus {
+    border-color: var(--navy);
+    outline: none;
+}
+
+/* ADMIN PROFILE INPUT */
+.admin-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #dde1e7;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border 0.2s;
+    font-family: 'Poppins', sans-serif;
+}
+
+.admin-input:focus {
     border-color: var(--navy);
     outline: none;
 }

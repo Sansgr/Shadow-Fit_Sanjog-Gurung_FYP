@@ -5,6 +5,9 @@ urlpatterns = [
     # Dashboard
     path('', views.trainer_dashboard, name='trainer_dashboard'),
 
+    # Profile
+    path('profile/', views.trainer_profile, name='trainer_profile'),
+
     # Bookings
     path('bookings/', views.trainer_bookings, name='trainer_bookings'),
     path('bookings/<int:pk>/accept/', views.accept_booking, name='accept_booking'),
