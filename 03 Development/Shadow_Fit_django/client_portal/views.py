@@ -67,11 +67,26 @@ def client_dashboard(request):
         trainers = []
         messages.error(request, "Failed to load dashboard data. Please try again.")
 
+    # Paginate Plans 
+    plans_paginator = Paginator(plans, 4)   # 4 plans per page on dashboard
+    plans_page = request.GET.get('plans_page', 1)
+    try:
+        plans = plans_paginator.page(plans_page)
+    except (EmptyPage, PageNotAnInteger):
+        plans = plans_paginator.page(1)
+
+    # Paginate Trainers 
+    trainers_paginator = Paginator(trainers, 6)  # 6 trainers per page
+    trainers_page = request.GET.get('trainers_page', 1)
+    try:
+        trainers = trainers_paginator.page(trainers_page)
+    except (EmptyPage, PageNotAnInteger):
+        trainers = trainers_paginator.page(1)
+
     return render(request, 'client_portal/dashboard.html', {
         'plans': plans,
         'trainers': trainers,
     })
-
 
 
 # 2) PROFILE MANAGEMENT
@@ -980,8 +995,6 @@ def cancel_booking(request, pk):
     return render(request, 'client_portal/trainers/cancel_booking.html', {
         'booking': booking,
     })
-
-
 
 
 # 5) NOTIFICATIONS 

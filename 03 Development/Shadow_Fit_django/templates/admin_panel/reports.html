@@ -262,53 +262,32 @@
 
 {% include "admin_panel/includes/pagination.html" with page_obj=data %}
 
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // ✅ Parse JSON safely using json_script
-    const subsStatusLabels = JSON.parse(
-        document.getElementById('subs-status-labels').textContent
-    );
-    const subsStatusCounts = JSON.parse(
-        document.getElementById('subs-status-counts').textContent
-    );
-    const plansLabels = JSON.parse(
-        document.getElementById('plans-labels').textContent
-    );
-    const plansCounts = JSON.parse(
-        document.getElementById('plans-counts').textContent
-    );
-    const bookingStatusLabels = JSON.parse(
-        document.getElementById('booking-status-labels').textContent
-    );
-    const bookingStatusCounts = JSON.parse(
-        document.getElementById('booking-status-counts').textContent
-    );
-    const monthlyBookingLabels = JSON.parse(
-        document.getElementById('monthly-booking-labels').textContent
-    );
-    const monthlyBookingCounts = JSON.parse(
-        document.getElementById('monthly-booking-counts').textContent
-    );
-    const trainerNames = JSON.parse(
-        document.getElementById('trainer-names').textContent
-    );
-    const trainerBookingCounts = JSON.parse(
-        document.getElementById('trainer-booking-counts').textContent
-    );
-    const trainerRatings = JSON.parse(
-        document.getElementById('trainer-ratings').textContent
-    );
+    // Parse JSON safely
+    const subsStatusLabels = JSON.parse(document.getElementById('subs-status-labels').textContent);
+    const subsStatusCounts = JSON.parse(document.getElementById('subs-status-counts').textContent);
+    const plansLabels = JSON.parse(document.getElementById('plans-labels').textContent);
+    const plansCounts = JSON.parse(document.getElementById('plans-counts').textContent);
+    const bookingStatusLabels = JSON.parse(document.getElementById('booking-status-labels').textContent);
+    const bookingStatusCounts = JSON.parse(document.getElementById('booking-status-counts').textContent);
+    const monthlyBookingLabels = JSON.parse(document.getElementById('monthly-booking-labels').textContent);
+    const monthlyBookingCounts = JSON.parse(document.getElementById('monthly-booking-counts').textContent);
+    const trainerNames = JSON.parse(document.getElementById('trainer-names').textContent);
+    const trainerBookingCounts = JSON.parse(document.getElementById('trainer-booking-counts').textContent);
+    const trainerRatings = JSON.parse(document.getElementById('trainer-ratings').textContent);
 
-    // ─── Membership Charts ──────────────────────────
+    // ─── Membership: Subscription Status Doughnut ──
     if (document.getElementById('subsStatusChart')) {
         new Chart(document.getElementById('subsStatusChart'), {
             type: 'doughnut',
             data: {
-                labels: subsStatusLabels,
+                labels: subsStatusLabels.length ? subsStatusLabels : ['No Data'],
                 datasets: [{
-                    data: subsStatusCounts,
-                    backgroundColor: ['#20c05c', '#f39c12', '#e74c3c', '#3498db'],
+                    data: subsStatusCounts.length ? subsStatusCounts : [1],
+                    backgroundColor: subsStatusCounts.length
+                        ? ['#20c05c', '#f39c12', '#e74c3c', '#3498db']
+                        : ['#e0e0e0'],
                     borderWidth: 2,
                     borderColor: '#fff'
                 }]
@@ -320,14 +299,15 @@
         });
     }
 
+    // ─── Membership: Plans Popularity Bar ──────────
     if (document.getElementById('plansChart')) {
         new Chart(document.getElementById('plansChart'), {
             type: 'bar',
             data: {
-                labels: plansLabels,
+                labels: plansLabels.length ? plansLabels : ['No Data'],
                 datasets: [{
                     label: 'Subscriptions',
-                    data: plansCounts,
+                    data: plansCounts.length ? plansCounts : [0],
                     backgroundColor: 'rgba(32,192,92,0.75)',
                     borderColor: '#20c05c',
                     borderWidth: 2,
@@ -338,22 +318,24 @@
                 responsive: true,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
                     x: { grid: { display: false } }
                 }
             }
         });
     }
 
-    // ─── Booking Charts ─────────────────────────────
+    // ─── Booking: Status Pie ────────────────────────
     if (document.getElementById('bookingStatusChart')) {
         new Chart(document.getElementById('bookingStatusChart'), {
             type: 'pie',
             data: {
-                labels: bookingStatusLabels,
+                labels: bookingStatusLabels.length ? bookingStatusLabels : ['No Data'],
                 datasets: [{
-                    data: bookingStatusCounts,
-                    backgroundColor: ['#f39c12', '#20c05c', '#e74c3c', '#3498db'],
+                    data: bookingStatusCounts.length ? bookingStatusCounts : [1],
+                    backgroundColor: bookingStatusCounts.length
+                        ? ['#f39c12', '#20c05c', '#e74c3c', '#3498db']
+                        : ['#e0e0e0'],
                     borderWidth: 2,
                     borderColor: '#fff'
                 }]
@@ -365,14 +347,15 @@
         });
     }
 
+    // ─── Booking: Monthly Line Chart ───────────────
     if (document.getElementById('monthlyBookingsChart')) {
         new Chart(document.getElementById('monthlyBookingsChart'), {
             type: 'line',
             data: {
-                labels: monthlyBookingLabels,
+                labels: monthlyBookingLabels.length ? monthlyBookingLabels : ['No Data'],
                 datasets: [{
                     label: 'Bookings',
-                    data: monthlyBookingCounts,
+                    data: monthlyBookingCounts.length ? monthlyBookingCounts : [0],
                     borderColor: '#20c05c',
                     backgroundColor: 'rgba(32,192,92,0.1)',
                     borderWidth: 2,
@@ -386,22 +369,22 @@
                 responsive: true,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
                     x: { grid: { display: false } }
                 }
             }
         });
     }
 
-    // ─── Trainer Charts ─────────────────────────────
+    // ─── Trainer: Total Bookings Horizontal Bar ─────
     if (document.getElementById('trainerBookingsChart')) {
         new Chart(document.getElementById('trainerBookingsChart'), {
             type: 'bar',
             data: {
-                labels: trainerNames,
+                labels: trainerNames.length ? trainerNames : ['No Data'],
                 datasets: [{
                     label: 'Total Bookings',
-                    data: trainerBookingCounts,
+                    data: trainerBookingCounts.length ? trainerBookingCounts : [0],
                     backgroundColor: 'rgba(13,27,42,0.8)',
                     borderColor: '#0d1b2a',
                     borderWidth: 2,
@@ -410,24 +393,25 @@
             },
             options: {
                 responsive: true,
-                indexAxis: 'y',  // horizontal bar
+                indexAxis: 'y',
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
                     y: { grid: { display: false } }
                 }
             }
         });
     }
 
+    // ─── Trainer: Avg Rating Bar ────────────────────
     if (document.getElementById('trainerRatingsChart')) {
         new Chart(document.getElementById('trainerRatingsChart'), {
             type: 'bar',
             data: {
-                labels: trainerNames,
+                labels: trainerNames.length ? trainerNames : ['No Data'],
                 datasets: [{
                     label: 'Avg Rating',
-                    data: trainerRatings,
+                    data: trainerRatings.length ? trainerRatings : [0],
                     backgroundColor: 'rgba(243,156,18,0.75)',
                     borderColor: '#f39c12',
                     borderWidth: 2,
@@ -449,5 +433,4 @@
         });
     }
 </script>
-
 {% endblock %}

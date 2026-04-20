@@ -77,6 +77,29 @@
         <p class="text-muted">No plans available yet.</p>
         {% endfor %}
     </div>
+
+    {% if plans.has_other_pages %}
+    <div class="pagination-bar mt-4">
+        {% if plans.has_previous %}
+            <a href="?plans_page={{ plans.previous_page_number }}"
+                class="page-btn">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        {% endif %}
+        {% for num in plans.paginator.page_range %}
+            <a href="?plans_page={{ num }}"
+                class="page-btn {% if plans.number == num %}active{% endif %}">
+                {{ num }}
+            </a>
+        {% endfor %}
+        {% if plans.has_next %}
+            <a href="?plans_page={{ plans.next_page_number }}"
+                class="page-btn">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
 </section>
 
 <!-- ── TRAINERS ───────────────────────────────── -->
@@ -127,6 +150,29 @@
         <p class="text-muted">No trainers available yet.</p>
         {% endfor %}
     </div>
+
+    {% if trainers.has_other_pages %}
+    <div class="pagination-bar mt-4">
+        {% if trainers.has_previous %}
+            <a href="?trainers_page={{ trainers.previous_page_number }}"
+                class="page-btn">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        {% endif %}
+        {% for num in trainers.paginator.page_range %}
+            <a href="?trainers_page={{ num }}"
+                class="page-btn {% if trainers.number == num %}active{% endif %}">
+                {{ num }}
+            </a>
+        {% endfor %}
+        {% if trainers.has_next %}
+            <a href="?trainers_page={{ trainers.next_page_number }}"
+                class="page-btn">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
 </section>
 
 <!-- AUTH POPUP -->

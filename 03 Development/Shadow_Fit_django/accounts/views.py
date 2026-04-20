@@ -58,7 +58,7 @@ def login_view(request):
 
             # Handle Remember Me — session expires on browser close if unchecked
             if not form.cleaned_data.get('remember_me'):
-                request.session.set_expiry(120)  # 2 minutes for clients
+                request.session.set_expiry(60)  # 2 minutes for clients
             else:
                 request.session.set_expiry(1209600)  # 2 weeks if Remember Me checked
 

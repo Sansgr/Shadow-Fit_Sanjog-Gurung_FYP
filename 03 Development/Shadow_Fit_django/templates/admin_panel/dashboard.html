@@ -226,14 +226,14 @@
     const bookingLabels = JSON.parse(document.getElementById('booking-labels').textContent);
     const bookingCounts = JSON.parse(document.getElementById('booking-counts').textContent);
 
-    // ─── 1. Monthly Revenue Bar Chart ─────────────
+    // 1. Monthly Revenue Bar Chart 
     new Chart(document.getElementById('revenueChart'), {
         type: 'bar',
         data: {
-            labels: revenueLabels,
+            labels: revenueLabels.length ? revenueLabels : ['No Data'],
             datasets: [{
                 label: 'Revenue (Rs.)',
-                data: revenueData,
+                data: revenueData.length ? revenueData : [0],
                 backgroundColor: 'rgba(32, 192, 92, 0.75)',
                 borderColor: '#20c05c',
                 borderWidth: 2,
@@ -250,14 +250,16 @@
         }
     });
 
-    // ─── 2. Subscription Status Doughnut Chart ─────
+    // 2. Subscription Status Doughnut Chart 
     new Chart(document.getElementById('subStatusChart'), {
         type: 'doughnut',
         data: {
-            labels: subLabels,
+            labels: subLabels.length ? subLabels : ['No Data'],
             datasets: [{
-                data: subCounts,
-                backgroundColor: ['#20c05c', '#f39c12', '#e74c3c', '#3498db'],
+                data: subCounts.length ? subCounts : [1],
+                backgroundColor: subCounts.length
+                    ? ['#20c05c', '#f39c12', '#e74c3c', '#3498db']
+                    : ['#e0e0e0'],
                 borderWidth: 2,
                 borderColor: '#fff'
             }]
@@ -268,14 +270,16 @@
         }
     });
 
-    // ─── 3. Booking Status Pie Chart ───────────────
+    // 3. Booking Status Pie Chart 
     new Chart(document.getElementById('bookingStatusChart'), {
         type: 'pie',
         data: {
-            labels: bookingLabels,
+            labels: bookingLabels.length ? bookingLabels : ['No Data'],
             datasets: [{
-                data: bookingCounts,
-                backgroundColor: ['#f39c12', '#20c05c', '#e74c3c', '#3498db'],
+                data: bookingCounts.length ? bookingCounts : [1],
+                backgroundColor: bookingCounts.length
+                    ? ['#f39c12', '#20c05c', '#e74c3c', '#3498db']
+                    : ['#e0e0e0'],
                 borderWidth: 2,
                 borderColor: '#fff'
             }]
@@ -286,14 +290,14 @@
         }
     });
 
-    // ─── 4. Revenue Trend Line Chart ───────────────
+    //  4. Revenue Trend Line Chart 
     new Chart(document.getElementById('revenueTrendChart'), {
         type: 'line',
         data: {
-            labels: revenueLabels,
+            labels: revenueLabels.length ? revenueLabels : ['No Data'],
             datasets: [{
                 label: 'Revenue Trend (Rs.)',
-                data: revenueData,
+                data: revenueData.length ? revenueData : [0],
                 borderColor: '#20c05c',
                 backgroundColor: 'rgba(32, 192, 92, 0.1)',
                 borderWidth: 2,

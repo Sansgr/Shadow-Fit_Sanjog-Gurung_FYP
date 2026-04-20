@@ -10,7 +10,7 @@
             Review {{ booking.schedule.trainer.user.get_full_name }}
         </h4>
 
-        <!-- Trainer info -->
+        <!-- Trainer info summary -->
         <div style="display:flex; align-items:center; gap:14px; margin-bottom:24px;
             padding:16px; background:var(--bg); border-radius:10px;">
             {% if booking.schedule.trainer.user.photo %}
@@ -25,7 +25,7 @@
                     {{ booking.schedule.trainer.specialty }}
                 </p>
                 <p style="margin:0; font-size:12px; color:var(--text-muted);">
-                    Booking: {{ booking.duration }} —
+                    {{ booking.duration }} —
                     {{ booking.start_date|date:"M d, Y" }}
                 </p>
             </div>
@@ -36,14 +36,14 @@
 
             <!-- Star Rating -->
             <label style="font-size:14px; font-weight:500; margin-bottom:10px; display:block;">
-                Your Rating
+                Your Rating <span style="color:#e74c3c;">*</span>
             </label>
             <div class="star-rating-group mb-4">
                 {% for i in "12345" %}
                 <label class="star-label">
-                    <input type="radio" name="rating" value="{{ i }}" required>
+                    <input type="radio" name="rating" value="{{ forloop.counter }}" required>
                     <i class="bi bi-star-fill star-icon"></i>
-                    <span>{{ i }}</span>
+                    <span>{{ forloop.counter }}</span>
                 </label>
                 {% endfor %}
             </div>
@@ -56,9 +56,9 @@
             <textarea name="comment" rows="4"
                 placeholder="Share your experience with this trainer..."
                 style="width:100%; padding:10px 14px; border:1px solid #dde1e7;
-                    border-radius:8px; font-size:14px; resize:vertical; margin-bottom:20px;"
-            ></textarea>
-
+                    border-radius:8px; font-size:14px; resize:vertical;
+                    margin-bottom:20px; font-family:'Poppins',sans-serif;">
+            </textarea>
             <div class="d-flex gap-3">
                 <button type="submit" class="client-btn-green">
                     <i class="bi bi-send"></i> Submit Review

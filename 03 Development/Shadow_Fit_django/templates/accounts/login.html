@@ -11,35 +11,40 @@
         <div class="auth-card">
             <div style="text-align:center; margin-bottom:10px;">
                 <a href="{% url 'client_dashboard' %}"
-                    style="font-size:30px; font-weight:700; font-family:'Montserrat',sans-serif; text-decoration:none;">
-                    <span style="color:#000;">Shadow</span><span style="color:#20c05c;">Fit</span>
+                    style="font-size:30px; font-weight:700;
+                        font-family:'Montserrat',sans-serif; text-decoration:none;">
+                    <span style="color:#000;">Shadow</span>
+                    <span style="color:#20c05c;">Fit</span>
                 </a>
             </div>
 
             <h2 class="auth-title">Login</h2>
+
             {% if messages %}
-            {% for message in messages %}
-            <div class="alert">
-                {{ message }}
-            </div>
-            {% endfor %}
+                {% for message in messages %}
+                <div class="alert">{{ message }}</div>
+                {% endfor %}
             {% endif %}
 
-            <form method="POST">
+            <form method="POST" id="loginForm">
                 {% csrf_token %}
                 <div class="form-group">
                     <label>Username</label>
-                    <input type="text" name="username" required>
+                    <!-- id added for JS to pre-fill -->
+                    <input type="text" name="username" id="usernameInput"
+                        placeholder="Enter your username" required>
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" name="password" required>
+                    <input type="password" name="password"
+                        placeholder="Enter your password" required>
                 </div>
 
-                <!-- Remember Me + Forgot Password row -->
+                <!-- Remember Me + Forgot Password -->
                 <div class="login-options">
                     <label class="remember-me">
-                        <input type="checkbox" name="remember_me">
+                        <!-- id added for JS -->
+                        <input type="checkbox" name="remember_me" id="rememberMeCheck">
                         Remember Me
                     </label>
                     <a href="{% url 'forgot_password' %}" class="forgot-link">
@@ -54,9 +59,8 @@
                 Don't have an account?
                 <a href="{% url 'register' %}">Register</a>
             </div>
-            
-            <!-- Back to home link -->
-            <div style="text-align:center; margin-bottom:20px;">
+
+            <div style="text-align:center; margin-top:16px;">
                 <a href="{% url 'client_dashboard' %}"
                     style="font-size:13px; color:#888; text-decoration:none;">
                     <i class="bi bi-arrow-left"></i> Back to Home
@@ -64,5 +68,32 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const usernameInput = document.getElementById('usernameInput');
+        const rememberMeCheck = document.getElementById('rememberMeCheck');
+
+        //  On page load — pre-fill username if remembered
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedUsername = localStorage.getItem('shadowfit_username');
+            const wasRemembered = localStorage.getItem('shadowfit_remember') === 'true';
+
+            if (wasRemembered && savedUsername) {
+                usernameInput.value = savedUsername;
+                rememberMeCheck.checked = true;
+            }
+        });
+
+        // On form submit — save or clear username
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            if (rememberMeCheck.checked) {
+                localStorage.setItem('shadowfit_username', usernameInput.value);
+                localStorage.setItem('shadowfit_remember', 'true');
+            } else {
+                localStorage.removeItem('shadowfit_username');
+                localStorage.removeItem('shadowfit_remember');
+            }
+        });
+    </script>
 </body>
 </html>

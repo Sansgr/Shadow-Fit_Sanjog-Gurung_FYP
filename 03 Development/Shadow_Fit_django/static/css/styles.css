@@ -44,30 +44,38 @@ body {
 /*  LOGIN OPTIONS  */
 .login-options {
     display: flex;
+    flex-direction: row;          
     justify-content: space-between;
     align-items: center;
     margin-bottom: 18px;
     font-size: 14px;
+    gap: 10px;
 }
 
 .remember-me {
-    display: flex;
-    flex-direction: row;      
+    display: inline-flex;         /* inline flex not block */
+    flex-direction: row;
     align-items: center;
     gap: 8px;
     cursor: pointer;
     color: #555;
-    margin: 0;               
+    margin: 0;
     font-weight: normal;
+    line-height: 1;               /*prevent vertical spacing issues */
+    user-select: none;
 }
 
 .remember-me input[type="checkbox"] {
-    width: 16px;           
-    height: 16px;
-    margin: 0;             
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    padding: 0;
     cursor: pointer;
     accent-color: #20c05c;
     flex-shrink: 0;
+    vertical-align: middle;       /* align with text */
+    position: relative;
+    top: 0;  
 }
 
 .forgot-link {
@@ -75,6 +83,7 @@ body {
     text-decoration: none;
     font-weight: 500;
     white-space: nowrap;
+    line-height: 1;
 }
 
 .forgot-link:hover {
