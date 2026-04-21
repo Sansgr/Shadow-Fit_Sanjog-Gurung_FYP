@@ -237,7 +237,7 @@ def admin_add(request):
 @admin_required
 def client_list(request):
     clients = CustomUser.objects.filter(role='Member').order_by('-date_joined')
-    clients_page = paginate(clients, request, 10)
+    clients_page = paginate(clients, request, 5)
     return render(request, 'admin_panel/clients/client_list.html', {
         'clients': clients_page,
     })
@@ -297,7 +297,7 @@ def client_delete(request, pk):
 @admin_required
 def plan_list(request):
     plans = MembershipPlan.objects.all().order_by('price')
-    plans_page = paginate(plans, request, 10)
+    plans_page = paginate(plans, request, 5)
     return render(request, 'admin_panel/plans/plan_list.html', {
         'plans': plans_page,
     })
@@ -352,7 +352,7 @@ def plan_delete(request, pk):
 @admin_required
 def trainer_list(request):
     trainers = Trainer.objects.select_related('user').all().order_by('user__first_name')
-    trainers_page = paginate(trainers, request, 10)
+    trainers_page = paginate(trainers, request, 5)
     return render(request, 'admin_panel/trainers/trainer_list.html', {
         'trainers': trainers_page,
     })
@@ -431,7 +431,7 @@ def trainer_delete(request, pk):
 @admin_required
 def schedule_list(request):
     schedules = Schedule.objects.select_related('trainer__user').all().order_by('trainer__user__first_name', 'shift_name')
-    schedules_page = paginate(schedules, request, 10)
+    schedules_page = paginate(schedules, request, 5)
     return render(request, 'admin_panel/schedules/schedule_list.html', {
         'schedules': schedules_page,
     })
@@ -486,7 +486,7 @@ def schedule_delete(request, pk):
 @admin_required
 def booking_list(request):
     bookings = Booking.objects.select_related('user', 'schedule__trainer__user').all().order_by('-booking_date')
-    bookings_page = paginate(bookings, request, 10)
+    bookings_page = paginate(bookings, request, 5)
     return render(request, 'admin_panel/bookings/booking_list.html', {
         'bookings': bookings_page,
     })
@@ -562,7 +562,7 @@ def subscription_list(request):
         subscriptions = []
         messages.error(request, "Failed to load subscriptions.")
 
-    subscriptions_page = paginate(subscriptions, request, 10)
+    subscriptions_page = paginate(subscriptions, request, 5)
     return render(request, 'admin_panel/subscriptions/subscription_list.html', {
         'subscriptions': subscriptions_page,
     })
@@ -712,7 +712,7 @@ def payment_list(request):
         payments = []
         messages.error(request, "Failed to load payments.")
 
-    payments_page = paginate(payments, request, 10)
+    payments_page = paginate(payments, request, 5)
     return render(request, 'admin_panel/payments/payment_list.html', {
         'payments': payments_page,
     })
@@ -853,7 +853,7 @@ def feedback_list(request):
         feedbacks = []
         messages.error(request, "Failed to load feedback.")
 
-    feedbacks_page = paginate(feedbacks, request, 15)
+    feedbacks_page = paginate(feedbacks, request, 5)
     return render(request, 'admin_panel/feedback_list.html', {
         'feedbacks': feedbacks_page,
     })

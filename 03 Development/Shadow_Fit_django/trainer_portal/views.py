@@ -159,7 +159,7 @@ def trainer_bookings(request):
         status_filter = ''
         messages.error(request, "Failed to load bookings.")
 
-    bookings_page = paginate(bookings, request, 10)
+    bookings_page = paginate(bookings, request, 5)
 
     return render(request, 'trainer_portal/bookings.html', {
         'bookings': bookings_page,
@@ -277,7 +277,7 @@ def trainer_reviews(request):
         trainer = None
         messages.error(request, "Failed to load reviews.")
 
-    feedbacks_page = paginate(feedbacks, request, 10)
+    feedbacks_page = paginate(feedbacks, request, 2)
 
     return render(request, 'trainer_portal/reviews.html', {
         'feedbacks': feedbacks_page,

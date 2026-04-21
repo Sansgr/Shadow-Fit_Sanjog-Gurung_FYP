@@ -68,7 +68,7 @@ def client_dashboard(request):
         messages.error(request, "Failed to load dashboard data. Please try again.")
 
     # Paginate Plans 
-    plans_paginator = Paginator(plans, 4)   # 4 plans per page on dashboard
+    plans_paginator = Paginator(plans, 3)   # 3 plans per page on dashboard
     plans_page = request.GET.get('plans_page', 1)
     try:
         plans = plans_paginator.page(plans_page)
@@ -76,7 +76,7 @@ def client_dashboard(request):
         plans = plans_paginator.page(1)
 
     # Paginate Trainers 
-    trainers_paginator = Paginator(trainers, 6)  # 6 trainers per page
+    trainers_paginator = Paginator(trainers, 3)  # 3 trainers per page
     trainers_page = request.GET.get('trainers_page', 1)
     try:
         trainers = trainers_paginator.page(trainers_page)
@@ -180,7 +180,7 @@ def membership_list(request):
             pass
 
     # ─── Pagination ───────────────────────────────────
-    paginator = Paginator(plans, 6)  # 6 plans per page
+    paginator = Paginator(plans, 3)  # 3 plans per page
     page = request.GET.get('page', 1)
     try:
         plans_page = paginator.page(page)
@@ -1018,7 +1018,7 @@ def notifications_list(request):
         messages.error(request, "Failed to load notifications.")
 
     # Paginate — 5 per page
-    paginator = Paginator(notifications, 5)
+    paginator = Paginator(notifications, 2)
     page = request.GET.get('page', 1)
     try:
         notifications_page = paginator.page(page)
