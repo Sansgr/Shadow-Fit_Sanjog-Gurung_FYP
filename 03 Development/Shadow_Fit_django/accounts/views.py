@@ -30,9 +30,11 @@ def register_view(request):
             user.first_name = form.cleaned_data.get('first_name')
             user.last_name = form.cleaned_data.get('last_name')
             user.save()
-            messages.success(request, "Registration successful!")
-            login(request, user)
-            return redirect('client_dashboard')
+            messages.success(
+                request,
+                "Registration successful! Please login to continue."
+            )
+            return redirect('login')
         else:
             messages.error(request, "Registration failed. Please fix the errors below.")
     else:
